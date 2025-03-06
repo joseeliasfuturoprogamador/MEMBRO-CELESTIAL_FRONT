@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Flex, Box, Button, Grid, Text, Input, Heading } from "@chakra-ui/react";
-import { EditIcon, DeleteIcon, AddIcon } from "@chakra-ui/icons";
+import { Flex, Box, Button, Grid, Text, Input, Heading, InputGroup, InputLeftElement } from "@chakra-ui/react";
+import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
 import ModalComp from "./componentes/ModalComp";
 import axios from "axios";
@@ -55,12 +55,30 @@ const App = () => {
   return (
     <Flex direction="column" align="center" bg="gray.100" minH="100vh">
       <Box bg="blue.500" w="100%" py={4} textAlign="center">
-        <Heading color="white">MEMBRO CELESTIAL</Heading>
+        <Heading color="black">MEMBRO CELESTIAL</Heading>
       </Box>
       <Box w="80%" my={6} p={4} bg="white" borderRadius="md" boxShadow="lg">
         <Flex justify="space-between" mb={4}>
-          <Button leftIcon={<AddIcon />} colorScheme="blue" onClick={() => [setDataEdit({}), onOpen()]}>Criar novo Membro</Button>
-          <Input placeholder="Pesquisar Membro" value={search} onChange={(e) => setSearch(e.target.value)} width="300px" />
+          <Button
+            leftIcon={<AddIcon />}
+            colorScheme="blue"
+            onClick={() => [setDataEdit({}), onOpen()]}
+            _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+          >
+            Criar novo Membro
+          </Button>
+
+          {/* Campo de pesquisa com lupa */}
+          <InputGroup width="300px">
+            <InputLeftElement pointerEvents="none">
+              <SearchIcon color="black" />
+            </InputLeftElement>
+            <Input
+              placeholder="Pesquisar Membro"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </InputGroup>
         </Flex>
 
         <Grid templateColumns="repeat(3, 1fr)" gap={4}>
@@ -68,9 +86,32 @@ const App = () => {
             <Box key={index} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
               <Text fontWeight="bold" fontSize="lg">{nome}</Text>
               <Flex mt={3} justify="space-between">
-                <Button size="sm" leftIcon={<EditIcon />} colorScheme="yellow" onClick={() => [setDataEdit(data.find(user => user._id === _id)), onOpen()]}>Editar</Button>
-                <Button size="sm" leftIcon={<DeleteIcon />} colorScheme="red" onClick={() => handleRemove(_id)}>Excluir</Button>
-                <Button size="sm" colorScheme="green" onClick={() => handleGenerateLetter(_id)}>Gerar Carta</Button>
+                <Button
+                  size="sm"
+                  leftIcon={<EditIcon />}
+                  colorScheme="yellow"
+                  onClick={() => [setDataEdit(data.find(user => user._id === _id)), onOpen()]}
+                  _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+                >
+                  Editar
+                </Button>
+                <Button
+                  size="sm"
+                  leftIcon={<DeleteIcon />}
+                  colorScheme="red"
+                  onClick={() => handleRemove(_id)}
+                  _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+                >
+                  Excluir
+                </Button>
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={() => handleGenerateLetter(_id)}
+                  _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+                >
+                  Gerar Carta
+                </Button>
               </Flex>
             </Box>
           ))}

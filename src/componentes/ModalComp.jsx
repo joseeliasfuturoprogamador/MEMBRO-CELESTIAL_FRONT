@@ -18,7 +18,6 @@ const fieldPlaceholders = {
   funcao: "Digite a função",
   discipulado: "Selecione se fez discipulado",
   batismo: "Selecione a data do batismo",
-  // Adicionando o campo de conversão
 };
 
 const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
@@ -31,6 +30,10 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
       setForm({
         ...Object.fromEntries(
           Object.keys(fieldPlaceholders).map(field => {
+            if (field === "nascimento" || field === "batismo" || field === "conversao") {
+              // Converter a data para o formato YYYY-MM-DD ao editar
+              return [field, dataEdit[field] ? dataEdit[field].split('T')[0] : ''];
+            }
             return [field, dataEdit[field] || ''];
           })
         )
@@ -51,36 +54,56 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
       alert("Preencha todos os campos obrigatórios.");
       return;
     }
-
+  
     // Validação de data de nascimento
     const nascimentoDate = new Date(form.nascimento);
     if (isNaN(nascimentoDate.getTime())) {
       alert("A data de nascimento não é válida.");
       return;
     }
-
+  
     // Validação de data de batismo
     const batismoDate = new Date(form.batismo);
     if (isNaN(batismoDate.getTime())) {
       alert("A data de batismo não é válida.");
       return;
     }
-
-    // Validação de data de conversão
-    const conversaoDate = new Date(form.conversao);
-    if (isNaN(conversaoDate.getTime())) {
+  
+    // Validação de data de conversão (verificando se existe)
+    const conversaoDate = form.conversao ? new Date(form.conversao) : null;
+    if (conversaoDate && isNaN(conversaoDate.getTime())) {
       alert("A data de conversão não é válida.");
       return;
     }
-
+  
+    // Convertendo as datas para o formato correto YYYY-MM-DD
+    const dataNascimento = nascimentoDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const dataBatismo = batismoDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const dataConversao = conversaoDate ? conversaoDate.toISOString().split('T')[0] : null;
+  
+    // Atualizando o form com as datas convertidas
+    const formData = {
+      ...form,
+      nascimento: dataNascimento,
+      batismo: dataBatismo,
+      conversao: dataConversao,
+    };
+  
     try {
       const url = dataEdit._id ? `http://localhost:3000/api/users/${dataEdit._id}` : "http://localhost:3000/api/users";
       const method = dataEdit._id ? axios.put : axios.post;
-      await method(url, form);
+  
+      // Verifique se os dados estão sendo passados corretamente
+      console.log("Enviando dados:", formData);
+  
+      await method(url, formData);
+  
       loadUsers();
       onClose();
     } catch (error) {
-      console.error("Erro ao salvar usuário", error);
+      console.error("Erro ao salvar usuário:", error.response || error);
+      alert(`Erro: ${error.response?.data?.message || error.message || 'Erro desconhecido'}`);
+      alert("Houve um erro ao salvar o membro. Tente novamente.");
     }
   };
 
