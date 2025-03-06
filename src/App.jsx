@@ -55,7 +55,7 @@ const App = () => {
   return (
     <Flex direction="column" align="center" bg="gray.100" minH="100vh">
       <Box bg="blue.500" w="100%" py={4} textAlign="center">
-        <Heading color="black">MEMBRO CELESTIAL</Heading>
+        <Heading color="withe">MEMBRO CELESTIAL</Heading>
       </Box>
       <Box w="80%" my={6} p={4} bg="white" borderRadius="md" boxShadow="lg">
         <Flex justify="space-between" mb={4}>
