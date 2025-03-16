@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { 
-  Flex, Box, Button, Grid, Text, Input, Heading, InputGroup, InputLeftElement, IconButton 
+  Flex, Box, Button, Grid, Text, Input, Heading, InputGroup, InputLeftElement, Switch
 } from "@chakra-ui/react";
 import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
-import { CheckCircleIcon, SmallCloseIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
 import ModalComp from "./componentes/ModalComp";
 import axios from "axios";
@@ -20,9 +19,8 @@ const App = () => {
       const response = await axios.get("http://localhost:3000/api/users");
       setData(response.data);
 
-      // Inicializa o status de cada membro como ativo por padrão
       const statusInicial = response.data.reduce((acc, user) => {
-        acc[user._id] = true;
+        acc[user._id] = true; // Padrão: todos ativos
         return acc;
       }, {});
       setStatusMembros(statusInicial);
@@ -114,14 +112,17 @@ const App = () => {
                 <Flex justify="space-between" align="center">
                   <Text fontWeight="bold" fontSize="lg">{nome}</Text>
 
-                  {/* Botão pequeno de status do membro */}
-                  <IconButton
-                    size="sm"
-                    icon={statusMembros[_id] ? <CheckCircleIcon color="green.500" /> : <SmallCloseIcon color="red.500" />}
-                    onClick={() => toggleStatus(_id)}
-                    variant="ghost"
-                    _hover={{ transform: "scale(1.2)", transition: "0.2s" }}
-                  />
+                  {/* Toggle Switch para status */}
+                  <Flex align="center">
+                    <Text fontSize="sm" mr={2} fontWeight={"bold"}>
+                      {statusMembros[_id] ? "Ativo" : "Inativo"}
+                    </Text>
+                    <Switch
+                      colorScheme="green"
+                      isChecked={statusMembros[_id]}
+                      onChange={() => toggleStatus(_id)}
+                    />
+                  </Flex>
                 </Flex>
 
                 <Flex mt={3} justify="space-between">
