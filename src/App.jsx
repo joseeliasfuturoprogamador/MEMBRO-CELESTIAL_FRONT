@@ -6,6 +6,7 @@ import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
 import ModalComp from "./componentes/ModalComp";
 import axios from "axios";
+import SupportButton from "./componentes/SuportButton";
 
 const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -163,6 +164,8 @@ const App = () => {
       </Box>
 
       <ModalComp isOpen={isOpen} onClose={onClose} dataEdit={dataEdit} loadUsers={loadUsers} />
+      <SupportButton /> 
+
     </Flex>
   );
 };
