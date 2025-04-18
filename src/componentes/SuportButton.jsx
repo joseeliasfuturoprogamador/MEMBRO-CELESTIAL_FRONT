@@ -9,7 +9,7 @@ const SupportButton = () => {
       zIndex="1000"
       textAlign="center"
     >
-      <Link href="https://wa.me/98985438569" isExternal display="flex" flexDirection="column" alignItems="center">
+      <Link href="https://wa.me/98989342465" isExternal display="flex" flexDirection="column" alignItems="center">
         <Image
           src="./whatsapp-support.jpg"
           alt="Suporte via WhatsApp"

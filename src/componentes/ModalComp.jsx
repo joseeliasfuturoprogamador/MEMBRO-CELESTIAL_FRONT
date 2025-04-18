@@ -1,4 +1,23 @@
-import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, FormControl, FormLabel, Input, Select, VStack, HStack, IconButton } from "@chakra-ui/react";
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  VStack,
+  HStack,
+  IconButton,
+  useToast,
+  Box,
+  Grid,
+  GridItem,
+} from "@chakra-ui/react";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -21,23 +40,24 @@ const fieldPlaceholders = {
 };
 
 const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
-  const [form, setForm] = useState(() => ({
-    ...Object.fromEntries(Object.keys(fieldPlaceholders).map(field => [field, '']))
-  }));
+  const [form, setForm] = useState(() =>
+    Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
+  );
+
+  const toast = useToast();
 
   useEffect(() => {
     if (dataEdit && dataEdit._id) {
-      setForm({
-        ...Object.fromEntries(
-          Object.keys(fieldPlaceholders).map(field => {
-            if (field === "nascimento" || field === "batismo" || field === "conversao") {
-              // Converter a data para o formato YYYY-MM-DD ao editar
-              return [field, dataEdit[field] ? dataEdit[field].split('T')[0] : ''];
+      setForm(
+        Object.fromEntries(
+          Object.keys(fieldPlaceholders).map((field) => {
+            if (["nascimento", "batismo", "conversao"].includes(field)) {
+              return [field, dataEdit[field] ? dataEdit[field].split("T")[0] : ""];
             }
-            return [field, dataEdit[field] || ''];
+            return [field, dataEdit[field] || ""];
           })
         )
-      });
+      );
     }
   }, [dataEdit]);
 
@@ -45,108 +65,209 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
     const { name, value } = e.target;
     setForm((prevForm) => ({
       ...prevForm,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSave = async () => {
     if (!form.nome || !form.cpf || !form.nascimento || !form.batismo) {
-      alert("Preencha todos os campos obrigatórios.");
+      toast({
+        title: "Campos obrigatórios incompletos.",
+        description: "Preencha nome, CPF, nascimento e batismo.",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
       return;
     }
-  
-    // Validação de data de nascimento
+
     const nascimentoDate = new Date(form.nascimento);
-    if (isNaN(nascimentoDate.getTime())) {
-      alert("A data de nascimento não é válida.");
-      return;
-    }
-  
-    // Validação de data de batismo
     const batismoDate = new Date(form.batismo);
-    if (isNaN(batismoDate.getTime())) {
-      alert("A data de batismo não é válida.");
-      return;
-    }
-  
-    // Validação de data de conversão (verificando se existe)
     const conversaoDate = form.conversao ? new Date(form.conversao) : null;
-    if (conversaoDate && isNaN(conversaoDate.getTime())) {
-      alert("A data de conversão não é válida.");
+
+    const dataNascimento = nascimentoDate.toISOString().split("T")[0];
+    const dataBatismo = batismoDate.toISOString().split("T")[0];
+    const dataConversao = conversaoDate ? conversaoDate.toISOString().split("T")[0] : null;
+
+    const igrejaNome = localStorage.getItem("igrejaNome");
+    if (!igrejaNome) {
+      toast({
+        title: "Erro ao identificar a igreja.",
+        description: "Nome da igreja não encontrado no localStorage.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
       return;
     }
-  
-    // Convertendo as datas para o formato correto YYYY-MM-DD
-    const dataNascimento = nascimentoDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    const dataBatismo = batismoDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    const dataConversao = conversaoDate ? conversaoDate.toISOString().split('T')[0] : null;
-  
-    // Atualizando o form com as datas convertidas
+
     const formData = {
       ...form,
       nascimento: dataNascimento,
       batismo: dataBatismo,
       conversao: dataConversao,
     };
-  
+
     try {
-      const url = dataEdit._id ? `http://localhost:3000/api/users/${dataEdit._id}` : "http://localhost:3000/api/users";
-      const method = dataEdit._id ? axios.put : axios.post;
-  
-      // Verifique se os dados estão sendo passados corretamente
-      console.log("Enviando dados:", formData);
-  
-      await method(url, formData);
-  
-      loadUsers();
-      onClose();
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast({
+          title: "Erro de autenticação.",
+          description: "Token não encontrado.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "top",
+        });
+        return;
+      }
+
+      const isEdit = dataEdit && dataEdit._id;
+      const url = isEdit
+        ? `http://localhost:3000/api/users/${dataEdit._id}?igrejaNome=${igrejaNome}`
+        : `http://localhost:3000/api/users/?igrejaNome=${igrejaNome}`;
+
+      const method = isEdit ? axios.put : axios.post;
+
+      const response = await method(url, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        toast({
+          title: isEdit ? "Membro atualizado!" : "Membro cadastrado!",
+          description: isEdit
+            ? "As informações foram atualizadas com sucesso."
+            : "Novo membro cadastrado com sucesso.",
+          status: "success",
+          duration: 4000,
+          isClosable: true,
+          position: "top",
+        });
+        loadUsers();
+        onClose();
+      } else {
+        toast({
+          title: "Erro ao salvar.",
+          description: "Tente novamente mais tarde.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "top",
+        });
+      }
     } catch (error) {
-      console.error("Erro ao salvar usuário:", error.response || error);
-      alert(`Erro: ${error.response?.data?.message || error.message || 'Erro desconhecido'}`);
-      alert("Houve um erro ao salvar o membro. Tente novamente.");
+      console.error("Erro ao salvar membro:", error.response || error);
+      toast({
+        title: "Erro ao salvar membro.",
+        description: error.response?.data?.message || error.message || "Erro desconhecido.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} size="xl" closeOnOverlayClick={false}>
       <ModalOverlay />
       <ModalContent borderRadius="lg" borderWidth="1px" boxShadow="xl">
         <ModalHeader bg="blue.600" color="white" textAlign="center">
           {dataEdit._id ? "Editar Membro" : "Novo Cadastro de Membro"}
         </ModalHeader>
         <ModalCloseButton color="white" />
-        <ModalBody p={5} bg="gray.50">
-          <VStack spacing={3}>
-            {Object.keys(form).map((field) => (
-              <FormControl key={field}>
-                <FormLabel fontWeight="bold" fontSize="sm" color="gray.600">
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
-                </FormLabel>
-                {field === "nascimento" || field === "batismo" || field === "conversao" ? (
-                  <Input
-                    name={field}
-                    type="date"
-                    value={form[field]}
-                    onChange={handleChange}
-                    placeholder={fieldPlaceholders[field]}
-                  />
-                ) : ['estadocivil', 'discipulado'].includes(field) ? (
-                  <Select name={field} value={form[field]} onChange={handleChange} placeholder={fieldPlaceholders[field]}>
-                    {(field === "estadocivil" ? ["Solteiro(a)", "Casado(a)", "Viúvo", "Divorciado"] : ["Sim Fiz", "Não Fiz"]).map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </Select>
-                ) : (
-                  <Input name={field} value={form[field]} onChange={handleChange} placeholder={fieldPlaceholders[field]} />
-                )}
-              </FormControl>
-            ))}
-          </VStack>
+        <ModalBody p={6} bg="gray.50">
+          <Box>
+            <Grid
+              templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+              gap={6}
+              justifyItems="start"
+              alignItems="start"
+            >
+              {Object.keys(form).map((field) => (
+                <GridItem key={field}>
+                  <FormControl>
+                    <FormLabel fontWeight="bold" fontSize="sm" color="gray.600">
+                      {field.charAt(0).toUpperCase() + field.slice(1)}
+                    </FormLabel>
+                    {["nascimento", "batismo", "conversao"].includes(field) ? (
+                      <Input
+                        name={field}
+                        type="date"
+                        value={form[field]}
+                        onChange={handleChange}
+                        placeholder={fieldPlaceholders[field]}
+                        size="lg"
+                        borderRadius="md"
+                        borderColor="gray.300"
+                        _hover={{ borderColor: "gray.400" }}
+                        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                      />
+                    ) : ["estadocivil", "discipulado"].includes(field) ? (
+                      <Select
+                        name={field}
+                        value={form[field]}
+                        onChange={handleChange}
+                        placeholder={fieldPlaceholders[field]}
+                        size="lg"
+                        borderRadius="md"
+                        borderColor="gray.300"
+                        _hover={{ borderColor: "gray.400" }}
+                        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                      >
+                        {(field === "estadocivil"
+                          ? ["Solteiro(a)", "Casado(a)", "Viúvo", "Divorciado"]
+                          : ["Sim Fiz", "Não Fiz"]
+                        ).map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </Select>
+                    ) : (
+                      <Input
+                        name={field}
+                        value={form[field]}
+                        onChange={handleChange}
+                        placeholder={fieldPlaceholders[field]}
+                        size="lg"
+                        borderRadius="md"
+                        borderColor="gray.300"
+                        _hover={{ borderColor: "gray.400" }}
+                        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                      />
+                    )}
+                  </FormControl>
+                </GridItem>
+              ))}
+            </Grid>
+          </Box>
         </ModalBody>
         <ModalFooter bg="gray.100">
           <HStack spacing={4} w="100%" justify="space-between">
-            <IconButton icon={<FaSave />} aria-label="Salvar" colorScheme="blue" onClick={handleSave} />
-            <IconButton icon={<FaTimes />} aria-label="Cancelar" colorScheme="red" onClick={onClose} />
+            <IconButton
+              icon={<FaSave />}
+              aria-label="Salvar"
+              colorScheme="blue"
+              size="lg"
+              onClick={handleSave}
+              borderRadius="full"
+              boxShadow="md"
+            />
+            <IconButton
+              icon={<FaTimes />}
+              aria-label="Cancelar"
+              colorScheme="red"
+              size="lg"
+              onClick={onClose}
+              borderRadius="full"
+              boxShadow="md"
+            />
           </HStack>
         </ModalFooter>
       </ModalContent>
