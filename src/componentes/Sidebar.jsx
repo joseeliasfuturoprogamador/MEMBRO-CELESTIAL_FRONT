@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Box, VStack, Text, IconButton, Stack, Link, Drawer, DrawerOverlay, DrawerContent, DrawerBody } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  Text,
+  IconButton,
+  Stack,
+  Link,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerBody
+} from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { MdCalendarToday } from "react-icons/md";
 import { FaDollarSign } from "react-icons/fa";
@@ -9,13 +20,11 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleSidebar = () => setIsOpen(!isOpen);
 
   const handleNavigation = (path) => {
-    navigate(path); // Navega para a página correspondente
-    toggleSidebar(); // Fecha o sidebar móvel
+    navigate(path);
+    toggleSidebar();
   };
 
   return (
@@ -35,7 +44,7 @@ const Sidebar = () => {
         onClick={toggleSidebar}
       />
 
-      {/* Sidebar padrão para telas maiores */}
+      {/* Sidebar padrão (desktop) */}
       <Box
         w="200px"
         bg="blue.500"
@@ -54,10 +63,10 @@ const Sidebar = () => {
             <Link
               display="flex"
               alignItems="center"
-              _hover={{ bg: "blue.900", p: 2, borderRadius: "md" }}
+              _hover={{ bg: "blue.900" }}
               p={2}
               borderRadius="md"
-              onClick={() => handleNavigation("/membros")} // Navega para a página de membros
+              onClick={() => handleNavigation("/membros")}
             >
               <HamburgerIcon boxSize={5} mr={3} />
               <Text>Membros</Text>
@@ -65,10 +74,10 @@ const Sidebar = () => {
             <Link
               display="flex"
               alignItems="center"
-              _hover={{ bg: "blue.900", p: 2, borderRadius: "md" }}
+              _hover={{ bg: "blue.900" }}
               p={2}
               borderRadius="md"
-              onClick={() => handleNavigation("/dizimos")} // Navega para a página de dízimos
+              onClick={() => handleNavigation("/dizimos")}
             >
               <FaDollarSign size={20} style={{ marginRight: "10px" }} />
               <Text>Dízimos</Text>
@@ -76,10 +85,10 @@ const Sidebar = () => {
             <Link
               display="flex"
               alignItems="center"
-              _hover={{ bg: "blue.900", p: 2, borderRadius: "md" }}
+              _hover={{ bg: "blue.900" }}
               p={2}
               borderRadius="md"
-              onClick={() => handleNavigation("/eventos")} // Navega para a página de eventos
+              onClick={() => handleNavigation("/eventos")}
             >
               <MdCalendarToday size={20} style={{ marginRight: "10px" }} />
               <Text>Eventos</Text>
@@ -101,10 +110,10 @@ const Sidebar = () => {
                 <Link
                   display="flex"
                   alignItems="center"
-                  _hover={{ bg: "blue.900", p: 2, borderRadius: "md" }}
+                  _hover={{ bg: "blue.900" }}
                   p={2}
                   borderRadius="md"
-                  onClick={() => handleNavigation("/membros")} // Navega para a página de membros
+                  onClick={() => handleNavigation("/membros")}
                 >
                   <HamburgerIcon boxSize={5} mr={3} />
                   <Text>Membros</Text>
@@ -112,10 +121,10 @@ const Sidebar = () => {
                 <Link
                   display="flex"
                   alignItems="center"
-                  _hover={{ bg: "blue.900", p: 2, borderRadius: "md" }}
+                  _hover={{ bg: "blue.900" }}
                   p={2}
                   borderRadius="md"
-                  onClick={() => handleNavigation("/dizimos")} // Navega para a página de dízimos
+                  onClick={() => handleNavigation("/dizimos")}
                 >
                   <FaDollarSign size={20} style={{ marginRight: "10px" }} />
                   <Text>Dízimos</Text>
@@ -123,10 +132,10 @@ const Sidebar = () => {
                 <Link
                   display="flex"
                   alignItems="center"
-                  _hover={{ bg: "blue.900", p: 2, borderRadius: "md" }}
+                  _hover={{ bg: "blue.900" }}
                   p={2}
                   borderRadius="md"
-                  onClick={() => handleNavigation("/eventos")} // Navega para a página de eventos
+                  onClick={() => handleNavigation("/eventos")}
                 >
                   <MdCalendarToday size={20} style={{ marginRight: "10px" }} />
                   <Text>Eventos</Text>

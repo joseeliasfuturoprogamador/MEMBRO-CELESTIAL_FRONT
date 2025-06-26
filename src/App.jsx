@@ -18,9 +18,8 @@ import { useDisclosure } from "@chakra-ui/react";
 
 // Componentes
 import Sidebar from "./componentes/Sidebar";
-import CadastroIgreja from "./pages/AuthIgreja"; // Cadastro + Login
-import LoginIgreja from "./pages/AuthIgreja"; // Está incluso no mesmo componente
-import VerificarTokenComponent from "./pages/VerificarToken";
+import CadastroIgreja from "./pages/AuthIgreja";
+import ConfirmarCodigo from "./pages/VerificarToken";
 import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 
@@ -32,26 +31,15 @@ const App = () => {
   const [statusMembros, setStatusMembros] = useState({});
 
   const loadUsers = async () => {
-    const igrejaNome = localStorage.getItem("igrejaNome");
-    const token = localStorage.getItem("token");
-
-    // Verifique se a igrejaNome e token estão presentes no localStorage
-    console.log("igrejaNome:", igrejaNome);  // Verifique o valor de igrejaNome
-    console.log("token:", token);  // Verifique o valor de token
-
-    if (!igrejaNome || !token) return;
+    const idIgreja = localStorage.getItem("idIgreja");
+    if (!idIgreja) return;
 
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/users/?igrejaNome=${igrejaNome}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Dados recebidos:", response.data);  // Verifique o que está retornando da API
+      const response = await axios.get("http://localhost:3000/api/users", {
+        headers: {
+          "X-Igreja-Id": idIgreja,
+        },
+      });
       setData(response.data);
 
       const statusInicial = response.data.reduce((acc, user) => {
@@ -69,27 +57,22 @@ const App = () => {
   }, []);
 
   const handleRemove = async (id) => {
-    const igrejaNome = localStorage.getItem("igrejaNome");
-    const token = localStorage.getItem("token");
-
-    if (!id || !igrejaNome || !token) {
+    const idIgreja = localStorage.getItem("idIgreja");
+    if (!id || !idIgreja) {
       alert("Informações incompletas para deletar o usuário.");
       return;
     }
 
     if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
       try {
-        await axios.delete(`http://localhost:3000/api/users/${id}?igrejaNome=${igrejaNome}`, {
+        await axios.delete(`http://localhost:3000/api/users/${id}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "X-Igreja-Id": idIgreja,
           },
         });
 
-        // Atualiza a lista de usuários após exclusão
-        setData(prevData => prevData.filter(user => user._id !== id));
-
-        // Remove o status associado ao usuário
-        setStatusMembros(prevStatus => {
+        setData((prevData) => prevData.filter((user) => user._id !== id));
+        setStatusMembros((prevStatus) => {
           const novoStatus = { ...prevStatus };
           delete novoStatus[id];
           return novoStatus;
@@ -104,23 +87,26 @@ const App = () => {
   };
 
   const handleGenerateLetter = async (id) => {
-    const igrejaNome = localStorage.getItem("igrejaNome");
-    const token = localStorage.getItem("token");
+    const idIgreja = localStorage.getItem("idIgreja");
+    if (!idIgreja) {
+      alert("Igreja não identificada. Faça login novamente.");
+      return;
+    }
 
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/users/${id}/carta?igrejaNome=${igrejaNome}`,
+        `http://localhost:3000/api/users/${id}/carta`,
         {
-          responseType: 'blob',
+          responseType: "blob",
           headers: {
-            Authorization: `Bearer ${token}`,
+            "X-Igreja-Id": idIgreja,
           },
         }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `Carta_${id}.pdf`);
+      link.setAttribute("download", `Carta_${id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -130,27 +116,24 @@ const App = () => {
   };
 
   const toggleStatus = (id) => {
-    setStatusMembros(prev => ({
+    setStatusMembros((prev) => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !prev[id],
     }));
   };
 
   return (
     <Routes>
-      {/* Redirecionamento inicial */}
+      {/* Redireciona para a tela de cadastro/login inicialmente */}
       <Route path="/" element={<Navigate to="/cadastro-igreja" />} />
 
-      {/* Cadastro da Igreja com opção de login dentro */}
+      {/* Página de cadastro e login da igreja */}
       <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
 
-      {/* Login da Igreja (opcional, já incluso em CadastroIgreja) */}
-      <Route path="/login-igreja" element={<LoginIgreja />} />
+      {/* Tela para confirmar o código enviado por e-mail (aparece após login/cadastro) */}
+      <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
 
-      {/* Verificação de Token por E-mail */}
-      <Route path="/verificar-token" element={<VerificarTokenComponent />} />
-
-      {/* Dashboard protegido */}
+      {/* Dashboard: protegido, acessível após login e verificação */}
       <Route
         path="/dashboard"
         element={
@@ -160,9 +143,17 @@ const App = () => {
               <Box bg="blue.500" w="100%" py={4} textAlign="center">
                 <Heading color="white">MEMBRO CELESTIAL</Heading>
               </Box>
+
               <Box w="80%" my={6} p={4} bg="white" borderRadius="md" boxShadow="lg">
                 <Flex justify="space-between" mb={4}>
-                  <Button leftIcon={<AddIcon />} colorScheme="blue" onClick={onOpen}>
+                  <Button
+                    leftIcon={<AddIcon />}
+                    colorScheme="blue"
+                    onClick={() => {
+                      setDataEdit({}); // Limpa dados para criar novo membro
+                      onOpen();
+                    }}
+                  >
                     Criar novo Membro
                   </Button>
                   <InputGroup width="300px">
@@ -176,9 +167,12 @@ const App = () => {
                     />
                   </InputGroup>
                 </Flex>
+
                 <Grid templateColumns="repeat(3, 1fr)" gap={4}>
                   {data
-                    .filter(user => user.nome.toLowerCase().includes(search.toLowerCase()))
+                    .filter((user) =>
+                      user.nome.toLowerCase().includes(search.toLowerCase())
+                    )
                     .map(({ _id, nome }) => (
                       <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
                         <Flex justify="space-between" align="center">
@@ -194,13 +188,14 @@ const App = () => {
                             />
                           </Flex>
                         </Flex>
+
                         <Flex mt={3} justify="space-between">
                           <Button
                             size="sm"
                             leftIcon={<EditIcon />}
                             colorScheme="yellow"
                             onClick={() => {
-                              setDataEdit(data.find(user => user._id === _id));
+                              setDataEdit(data.find((user) => user._id === _id));
                               onOpen();
                             }}
                           >
@@ -215,6 +210,7 @@ const App = () => {
                             Excluir
                           </Button>
                         </Flex>
+
                         <Button
                           size="sm"
                           mt={3}
@@ -228,7 +224,13 @@ const App = () => {
                     ))}
                 </Grid>
               </Box>
-              <ModalComp isOpen={isOpen} onClose={onClose} dataEdit={dataEdit} loadUsers={loadUsers} />
+
+              <ModalComp
+                isOpen={isOpen}
+                onClose={onClose}
+                dataEdit={dataEdit}
+                loadUsers={loadUsers}
+              />
               <SupportButton />
             </Flex>
           </Flex>

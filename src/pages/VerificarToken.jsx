@@ -1,108 +1,118 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Box,
   Button,
-  Flex,
   Input,
   Text,
   VStack,
+  Flex,
   useToast,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
 } from "@chakra-ui/react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
-const VerificarToken = () => {
-  const [token, setToken] = useState("");
-  const toast = useToast();
+const ConfirmarCodigo = () => {
+  const [codigo, setCodigo] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const toast = useToast();
 
-  const handleVerify = async () => {
-    try {
-      const nome = localStorage.getItem("igrejaNome");
+  const email = localStorage.getItem("igrejaEmail");
+  const idIgreja = localStorage.getItem("idIgreja");
 
-      const response = await axios.post("http://localhost:3000/api/igreja/verificar-token", {
-        nome,
-        token,
-      });
-
-      localStorage.setItem("tokenVerificado", "true");
-
+  useEffect(() => {
+    if (!email) {
       toast({
-        title: "Token verificado com sucesso!",
-        description: "Você será redirecionado para o dashboard.",
-        status: "success",
-        duration: 5000,
+        title: "Erro",
+        description: "Dados da igreja não encontrados. Faça login novamente.",
+        status: "error",
+        duration: 4000,
         isClosable: true,
       });
+      navigate("/");
+    }
+  }, [email, navigate, toast]);
+
+  const handleSubmit = async () => {
+    setError("");
+
+    if (!codigo.trim()) {
+      setError("Informe o código enviado por e-mail");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://localhost:3000/api/confirmar", {
+        email,
+        idIgreja,
+        codigo,
+      });
+
+      toast({
+        title: response.data.message || "Código verificado com sucesso!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      localStorage.setItem("verified", "true");
+      localStorage.setItem("needsVerification", "false");
+
+      // SALVA o idIgreja AGORA após confirmação para garantir que estará definido!
+      if (response.data.idIgreja) {
+        localStorage.setItem("idIgreja", response.data.idIgreja);
+      } else if (!idIgreja) {
+        // Caso o backend não retorne, mantemos o que temos
+        console.warn("idIgreja não retornado na confirmação.");
+      }
 
       navigate("/dashboard");
-    } catch (error) {
-      console.error("Erro ao verificar token:", error);
-      toast({
-        title: "Token inválido",
-        description: error.response?.data?.message || "Tente novamente.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handlePasteToken = async () => {
-    try {
-      const clipboardText = await navigator.clipboard.readText();
-      setToken(clipboardText);
-      toast({
-        title: "Token colado!",
-        description: "O token foi colado com sucesso.",
-        status: "info",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error("Erro ao colar token:", error);
-      toast({
-        title: "Erro ao colar token",
-        description: "Não foi possível acessar a área de transferência.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+    } catch (err) {
+      const backendMessage = err.response?.data?.message;
+      setError(backendMessage || "Erro ao verificar código");
+      console.error("Erro na verificação:", backendMessage || err.message);
     }
   };
 
   return (
     <Flex h="100vh" align="center" justify="center" bg="gray.100">
-      <Box bg="white" p={10} borderRadius="md" boxShadow="lg" w="90%" maxW="400px">
-        <Text fontSize="2xl" mb={6} fontWeight="bold" color="purple.700" textAlign="center">
-          Verificar Token
+      <Box bg="white" p={8} rounded="md" shadow="md" w="400px">
+        <Text
+          fontSize="2xl"
+          fontWeight="bold"
+          mb={6}
+          textAlign="center"
+          color="blue.700"
+        >
+          Confirme o código enviado por e-mail
         </Text>
-
-        <Alert status="info" borderRadius="md" mb={4}>
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Token enviado!</AlertTitle>
-            <AlertDescription>Verifique sua caixa de entrada do e-mail ou Spam.</AlertDescription>
-          </Box>
-        </Alert>
 
         <VStack spacing={4}>
           <Input
-            placeholder="Cole o token recebido por e-mail"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
+            placeholder="Código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+            maxLength={6}
+            autoFocus
           />
 
-          <Button colorScheme="blue" variant="outline" w="full" onClick={handlePasteToken}>
-            Colar Token
+          {error && (
+            <Text color="red.500" fontSize="sm" textAlign="center">
+              {error}
+            </Text>
+          )}
+
+          <Button colorScheme="blue" w="full" onClick={handleSubmit}>
+            Confirmar
           </Button>
 
-          <Button colorScheme="purple" w="full" onClick={handleVerify}>
-            Verificar
+          <Button
+            variant="link"
+            color="gray.500"
+            mt={2}
+            onClick={() => navigate("/")}
+          >
+            Voltar para login
           </Button>
         </VStack>
       </Box>
@@ -110,4 +120,4 @@ const VerificarToken = () => {
   );
 };
 
-export default VerificarToken;
+export default ConfirmarCodigo;

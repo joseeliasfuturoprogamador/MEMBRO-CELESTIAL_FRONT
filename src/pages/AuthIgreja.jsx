@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  Link,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +24,7 @@ const CadastroLogin = () => {
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
-    password: "",
+    senha: "",
   });
 
   const navigate = useNavigate();
@@ -36,30 +37,46 @@ const CadastroLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       if (modoCadastro) {
-        await axios.post("http://localhost:3000/api/igreja/registrar", formData);
+        // Cadastro
+        const response = await axios.post("http://localhost:3000/api/cadastrar", formData);
+
         alert("Cadastro realizado com sucesso!");
-        setModoCadastro(false);
-        setFormData({ nome: "", email: "", password: "" });
-      } else {
-        // Limpa as informações anteriores no localStorage antes de fazer o login
-        localStorage.removeItem("igrejaNome");
-        localStorage.removeItem("token");
 
-        const response = await axios.post("http://localhost:3000/api/igreja/conectar", {
-          nome: formData.nome,
-          password: formData.password,
-        });
-
-        const { idIgreja, primeiraVez, token } = response.data;
+        // Salvar dados iniciais, mas NÃO salvar idIgreja aqui
         localStorage.setItem("igrejaNome", formData.nome);
-        localStorage.setItem("token", token); // Salva o novo token no localStorage
+        localStorage.setItem("igrejaEmail", formData.email);
+        localStorage.setItem("email", formData.email);
+
+        onOpen(); // abrir modal para informar que código foi enviado
+        setFormData({ nome: "", email: "", senha: "" });
+      } else {
+        // Login
+        // Limpar dados anteriores
+        localStorage.removeItem("igrejaNome");
+        localStorage.removeItem("idIgreja");
+
+        const response = await axios.post("http://localhost:3000/api/login", {
+          nome: formData.nome,
+          senha: formData.senha,
+          email: formData.email,
+        });
+        console.log("Login response:", response.data);
+
+        const { idIgreja, primeiraVez } = response.data;
+
+        localStorage.setItem("igrejaNome", formData.nome);
+        localStorage.setItem("igrejaEmail", formData.email);
+        localStorage.setItem("email", formData.email);
 
         if (primeiraVez) {
-          localStorage.setItem("idIgreja", idIgreja);
-          onOpen(); // abre o alerta estilizado
+          // Se é a primeira vez, abrir modal para informar sobre o código
+          onOpen();
         } else {
+          // Se não é a primeira vez, salvar idIgreja aqui e ir para dashboard direto
+          localStorage.setItem("idIgreja", idIgreja);
           alert("Login realizado com sucesso!");
           navigate("/dashboard");
         }
@@ -71,7 +88,7 @@ const CadastroLogin = () => {
 
   const handleOk = () => {
     onClose();
-    navigate("/verificar-token");
+    navigate("/confirmar-codigo"); // Navegar para tela de confirmação do código
   };
 
   return (
@@ -83,12 +100,25 @@ const CadastroLogin = () => {
         borderRadius="lg"
         overflow="hidden"
       >
-        {/* Seção da esquerda com imagem */}
-        <Box w="40%" bg="blue.500" p={6} display="flex" alignItems="center" justifyContent="center">
-          <Image src="./logo.jpg" alt="Logo Membro Celestial" maxH="250px" borderRadius="md" boxShadow="xl" />
+        {/* Imagem */}
+        <Box
+          w="40%"
+          bg="blue.500"
+          p={6}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Image
+            src="./logo.jpg"
+            alt="Logo Membro Celestial"
+            maxH="250px"
+            borderRadius="md"
+            boxShadow="xl"
+          />
         </Box>
 
-        {/* Seção da direita com formulário */}
+        {/* Formulário */}
         <Box w="60%" p={10}>
           <Text fontSize="3xl" fontWeight="bold" textAlign="center" color="blue.700">
             {modoCadastro ? "Criar Conta da Igreja" : "Login da Igreja"}
@@ -114,8 +144,8 @@ const CadastroLogin = () => {
             <Input
               placeholder="Senha"
               type="password"
-              name="password"
-              value={formData.password}
+              name="senha"
+              value={formData.senha}
               onChange={handleChange}
               required
             />
@@ -123,6 +153,12 @@ const CadastroLogin = () => {
               {modoCadastro ? "Registrar" : "Entrar"}
             </Button>
           </VStack>
+
+          {!modoCadastro && (
+            <Text mt={2} textAlign="center" color="blue.500">
+              <Link onClick={() => navigate("/esqueci-senha")}>Esqueceu a senha?</Link>
+            </Text>
+          )}
 
           <Text
             mt={6}
@@ -137,7 +173,7 @@ const CadastroLogin = () => {
         </Box>
       </Flex>
 
-      {/* Alerta de confirmação do token */}
+      {/* Alerta: código enviado */}
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
@@ -151,7 +187,7 @@ const CadastroLogin = () => {
             </AlertDialogHeader>
 
             <AlertDialogBody>
-              O token de verificação foi enviado para o e-mail cadastrado. Cole-o na próxima tela para acessar o sistema.
+              O código de verificação foi enviado para o e-mail cadastrado. Cole-o na próxima tela para acessar o sistema.
             </AlertDialogBody>
 
             <AlertDialogFooter>

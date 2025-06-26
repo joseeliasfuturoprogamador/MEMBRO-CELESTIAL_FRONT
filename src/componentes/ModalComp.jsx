@@ -47,19 +47,27 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
   const toast = useToast();
 
   useEffect(() => {
-    if (dataEdit && dataEdit._id) {
-      setForm(
-        Object.fromEntries(
-          Object.keys(fieldPlaceholders).map((field) => {
-            if (["nascimento", "batismo", "conversao"].includes(field)) {
-              return [field, dataEdit[field] ? dataEdit[field].split("T")[0] : ""];
-            }
-            return [field, dataEdit[field] || ""];
-          })
-        )
-      );
+    if (isOpen) {
+      if (dataEdit && dataEdit._id) {
+        // Editando: preenche formulário com dados existentes
+        setForm(
+          Object.fromEntries(
+            Object.keys(fieldPlaceholders).map((field) => {
+              if (["nascimento", "batismo", "conversao"].includes(field)) {
+                return [field, dataEdit[field] ? dataEdit[field].split("T")[0] : ""];
+              }
+              return [field, dataEdit[field] || ""];
+            })
+          )
+        );
+      } else {
+        // Novo cadastro: limpa o formulário
+        setForm(
+          Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
+        );
+      }
     }
-  }, [dataEdit]);
+  }, [dataEdit, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,11 +98,11 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
     const dataBatismo = batismoDate.toISOString().split("T")[0];
     const dataConversao = conversaoDate ? conversaoDate.toISOString().split("T")[0] : null;
 
-    const igrejaNome = localStorage.getItem("igrejaNome");
-    if (!igrejaNome) {
+    const igrejaId = localStorage.getItem("idIgreja");
+    if (!igrejaId) {
       toast({
         title: "Erro ao identificar a igreja.",
-        description: "Nome da igreja não encontrado no localStorage.",
+        description: "ID da igreja não encontrado no localStorage.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -108,32 +116,21 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
       nascimento: dataNascimento,
       batismo: dataBatismo,
       conversao: dataConversao,
+      igreja: igrejaId, // Inclui a igreja no corpo, além do cabeçalho
     };
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Erro de autenticação.",
-          description: "Token não encontrado.",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-          position: "top",
-        });
-        return;
-      }
-
       const isEdit = dataEdit && dataEdit._id;
       const url = isEdit
-        ? `http://localhost:3000/api/users/${dataEdit._id}?igrejaNome=${igrejaNome}`
-        : `http://localhost:3000/api/users/?igrejaNome=${igrejaNome}`;
+        ? `http://localhost:3000/api/users/${dataEdit._id}`
+        : `http://localhost:3000/api/users`;
 
       const method = isEdit ? axios.put : axios.post;
 
       const response = await method(url, formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-Igreja-Id": igrejaId,
         },
       });
 
@@ -148,7 +145,7 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
           isClosable: true,
           position: "top",
         });
-        loadUsers();
+        loadUsers(); // Recarrega lista
         onClose();
       } else {
         toast({
