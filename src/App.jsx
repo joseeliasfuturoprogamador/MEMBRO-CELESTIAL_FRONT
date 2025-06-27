@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
   Flex,
@@ -16,7 +16,6 @@ import {
 import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
 
-// Componentes
 import Sidebar from "./componentes/Sidebar";
 import CadastroIgreja from "./pages/AuthIgreja";
 import ConfirmarCodigo from "./pages/VerificarToken";
@@ -30,15 +29,26 @@ const App = () => {
   const [search, setSearch] = useState("");
   const [statusMembros, setStatusMembros] = useState({});
 
-  const loadUsers = async () => {
-    const idIgreja = localStorage.getItem("idIgreja");
-    if (!idIgreja) return;
+  const [idIgreja, setIdIgreja] = useState(() => {
+    const val = localStorage.getItem("idIgreja");
+    console.log("[App] Inicializando idIgreja com:", val);
+    return val;
+  });
+
+  // Função para carregar membros
+  const loadUsers = useCallback(async () => {
+    console.log("[App] loadUsers chamado com idIgreja =", idIgreja);
+
+    if (!idIgreja) {
+      console.log("[App] idIgreja vazio, limpando lista de membros");
+      setData([]);
+      setStatusMembros({});
+      return;
+    }
 
     try {
       const response = await axios.get("http://localhost:3000/api/users", {
-        headers: {
-          "X-Igreja-Id": idIgreja,
-        },
+        headers: { "X-Igreja-Id": idIgreja },
       });
       setData(response.data);
 
@@ -48,16 +58,46 @@ const App = () => {
       }, {});
       setStatusMembros(statusInicial);
     } catch (error) {
-      console.error("Erro ao carregar usuários", error);
+      console.error("[App] Erro ao carregar usuários:", error);
+      setData([]);
+      setStatusMembros({});
     }
-  };
+  }, [idIgreja]);
 
+  // Atualiza idIgreja ao mudar localStorage em outra aba
   useEffect(() => {
-    loadUsers();
+    const onStorageChange = (event) => {
+      if (event.key === "idIgreja") {
+        console.log("[App] Evento storage detectado. idIgreja mudou para:", event.newValue);
+        setIdIgreja(event.newValue);
+      }
+    };
+
+    window.addEventListener("storage", onStorageChange);
+    return () => window.removeEventListener("storage", onStorageChange);
   }, []);
 
+  // Atualiza idIgreja ao focar na aba (para pegar mudanças locais)
+  useEffect(() => {
+    const onFocus = () => {
+      const novoId = localStorage.getItem("idIgreja");
+      if (novoId !== idIgreja) {
+        console.log("[App] Aba focada, idIgreja mudou para:", novoId);
+        setIdIgreja(novoId);
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [idIgreja]);
+
+  // Sempre que idIgreja mudar, recarrega usuários
+  useEffect(() => {
+    console.log("[App] idIgreja mudou para:", idIgreja);
+    loadUsers();
+  }, [idIgreja, loadUsers]);
+
   const handleRemove = async (id) => {
-    const idIgreja = localStorage.getItem("idIgreja");
     if (!id || !idIgreja) {
       alert("Informações incompletas para deletar o usuário.");
       return;
@@ -87,7 +127,6 @@ const App = () => {
   };
 
   const handleGenerateLetter = async (id) => {
-    const idIgreja = localStorage.getItem("idIgreja");
     if (!idIgreja) {
       alert("Igreja não identificada. Faça login novamente.");
       return;
@@ -124,16 +163,9 @@ const App = () => {
 
   return (
     <Routes>
-      {/* Redireciona para a tela de cadastro/login inicialmente */}
       <Route path="/" element={<Navigate to="/cadastro-igreja" />} />
-
-      {/* Página de cadastro e login da igreja */}
       <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
-
-      {/* Tela para confirmar o código enviado por e-mail (aparece após login/cadastro) */}
       <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
-
-      {/* Dashboard: protegido, acessível após login e verificação */}
       <Route
         path="/dashboard"
         element={
@@ -150,7 +182,7 @@ const App = () => {
                     leftIcon={<AddIcon />}
                     colorScheme="blue"
                     onClick={() => {
-                      setDataEdit({}); // Limpa dados para criar novo membro
+                      setDataEdit({});
                       onOpen();
                     }}
                   >
@@ -174,9 +206,17 @@ const App = () => {
                       user.nome.toLowerCase().includes(search.toLowerCase())
                     )
                     .map(({ _id, nome }) => (
-                      <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
+                      <Box
+                        key={_id}
+                        p={4}
+                        borderWidth="1px"
+                        borderRadius="lg"
+                        boxShadow="sm"
+                      >
                         <Flex justify="space-between" align="center">
-                          <Text fontWeight="bold" fontSize="lg">{nome}</Text>
+                          <Text fontWeight="bold" fontSize="lg">
+                            {nome}
+                          </Text>
                           <Flex align="center">
                             <Text fontSize="sm" mr={2} fontWeight="bold">
                               {statusMembros[_id] ? "Ativo" : "Inativo"}
@@ -229,7 +269,8 @@ const App = () => {
                 isOpen={isOpen}
                 onClose={onClose}
                 dataEdit={dataEdit}
-                loadUsers={loadUsers}
+                data={data}
+                setData={setData}
               />
               <SupportButton />
             </Flex>

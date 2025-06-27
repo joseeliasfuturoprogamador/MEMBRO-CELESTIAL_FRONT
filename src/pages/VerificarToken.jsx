@@ -17,8 +17,26 @@ const ConfirmarCodigo = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const email = localStorage.getItem("igrejaEmail");
-  const idIgreja = localStorage.getItem("idIgreja");
+  const [email, setEmail] = useState(() => localStorage.getItem("igrejaEmail") || "");
+
+  // Atualiza o email do localStorage ao mudar de aba ou janela
+  useEffect(() => {
+    const handleFocus = () => {
+      setEmail(localStorage.getItem("igrejaEmail") || "");
+    };
+
+    const handleStorage = () => {
+      setEmail(localStorage.getItem("igrejaEmail") || "");
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!email) {
@@ -44,27 +62,27 @@ const ConfirmarCodigo = () => {
     try {
       const response = await axios.post("http://localhost:3000/api/confirmar", {
         email,
-        idIgreja,
         codigo,
       });
 
+      const { idIgreja, message } = response.data;
+
+      if (!idIgreja) {
+        throw new Error("ID da igreja não retornado pelo servidor.");
+      }
+
+      // Remove o id antigo e salva o novo corretamente
+      localStorage.removeItem("idIgreja");
+      localStorage.setItem("idIgreja", idIgreja);
+      localStorage.setItem("verified", "true");
+      localStorage.setItem("needsVerification", "false");
+
       toast({
-        title: response.data.message || "Código verificado com sucesso!",
+        title: message || "Código verificado com sucesso!",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-
-      localStorage.setItem("verified", "true");
-      localStorage.setItem("needsVerification", "false");
-
-      // SALVA o idIgreja AGORA após confirmação para garantir que estará definido!
-      if (response.data.idIgreja) {
-        localStorage.setItem("idIgreja", response.data.idIgreja);
-      } else if (!idIgreja) {
-        // Caso o backend não retorne, mantemos o que temos
-        console.warn("idIgreja não retornado na confirmação.");
-      }
 
       navigate("/dashboard");
     } catch (err) {

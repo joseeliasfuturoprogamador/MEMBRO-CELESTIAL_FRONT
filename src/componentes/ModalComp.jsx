@@ -39,7 +39,7 @@ const fieldPlaceholders = {
   batismo: "Selecione a data do batismo",
 };
 
-const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
+const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
   const [form, setForm] = useState(() =>
     Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
   );
@@ -145,7 +145,18 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, loadUsers }) => {
           isClosable: true,
           position: "top",
         });
-        loadUsers(); // Recarrega lista
+
+        // Atualiza estado local para refletir mudanças sem recarregar da API
+        if (isEdit) {
+          // Atualiza membro existente na lista
+          setData((prev) =>
+            prev.map((m) => (m._id === dataEdit._id ? response.data : m))
+          );
+        } else {
+          // Adiciona novo membro na lista
+          setData((prev) => [...prev, response.data]);
+        }
+
         onClose();
       } else {
         toast({
