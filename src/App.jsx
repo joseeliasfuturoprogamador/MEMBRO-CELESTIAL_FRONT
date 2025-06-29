@@ -30,17 +30,11 @@ const App = () => {
   const [statusMembros, setStatusMembros] = useState({});
 
   const [idIgreja, setIdIgreja] = useState(() => {
-    const val = localStorage.getItem("idIgreja");
-    console.log("[App] Inicializando idIgreja com:", val);
-    return val;
+    return sessionStorage.getItem("idIgreja") || "";
   });
 
-  // Função para carregar membros
   const loadUsers = useCallback(async () => {
-    console.log("[App] loadUsers chamado com idIgreja =", idIgreja);
-
     if (!idIgreja) {
-      console.log("[App] idIgreja vazio, limpando lista de membros");
       setData([]);
       setStatusMembros({});
       return;
@@ -50,6 +44,7 @@ const App = () => {
       const response = await axios.get("http://localhost:3000/api/users", {
         headers: { "X-Igreja-Id": idIgreja },
       });
+
       setData(response.data);
 
       const statusInicial = response.data.reduce((acc, user) => {
@@ -58,50 +53,31 @@ const App = () => {
       }, {});
       setStatusMembros(statusInicial);
     } catch (error) {
-      console.error("[App] Erro ao carregar usuários:", error);
+      console.error("Erro ao carregar usuários:", error);
       setData([]);
-      setStatusMembros({});
     }
   }, [idIgreja]);
 
-  // Atualiza idIgreja ao mudar localStorage em outra aba
   useEffect(() => {
-    const onStorageChange = (event) => {
-      if (event.key === "idIgreja") {
-        console.log("[App] Evento storage detectado. idIgreja mudou para:", event.newValue);
-        setIdIgreja(event.newValue);
-      }
-    };
-
-    window.addEventListener("storage", onStorageChange);
-    return () => window.removeEventListener("storage", onStorageChange);
-  }, []);
-
-  // Atualiza idIgreja ao focar na aba (para pegar mudanças locais)
-  useEffect(() => {
-    const onFocus = () => {
-      const novoId = localStorage.getItem("idIgreja");
+    const atualizarIdIgreja = () => {
+      const novoId = sessionStorage.getItem("idIgreja");
       if (novoId !== idIgreja) {
-        console.log("[App] Aba focada, idIgreja mudou para:", novoId);
-        setIdIgreja(novoId);
+        setIdIgreja(novoId || "");
       }
     };
 
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("focus", atualizarIdIgreja);
+    return () => {
+      window.removeEventListener("focus", atualizarIdIgreja);
+    };
   }, [idIgreja]);
 
-  // Sempre que idIgreja mudar, recarrega usuários
   useEffect(() => {
-    console.log("[App] idIgreja mudou para:", idIgreja);
     loadUsers();
   }, [idIgreja, loadUsers]);
 
   const handleRemove = async (id) => {
-    if (!id || !idIgreja) {
-      alert("Informações incompletas para deletar o usuário.");
-      return;
-    }
+    if (!id || !idIgreja) return;
 
     if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
       try {
@@ -111,26 +87,15 @@ const App = () => {
           },
         });
 
-        setData((prevData) => prevData.filter((user) => user._id !== id));
-        setStatusMembros((prevStatus) => {
-          const novoStatus = { ...prevStatus };
-          delete novoStatus[id];
-          return novoStatus;
-        });
-
-        alert("Usuário excluído com sucesso!");
+        loadUsers();
       } catch (error) {
         console.error("Erro ao deletar usuário:", error);
-        alert("Erro ao deletar usuário. Verifique a conexão ou tente novamente.");
       }
     }
   };
 
   const handleGenerateLetter = async (id) => {
-    if (!idIgreja) {
-      alert("Igreja não identificada. Faça login novamente.");
-      return;
-    }
+    if (!idIgreja) return;
 
     try {
       const response = await axios.get(
@@ -202,8 +167,10 @@ const App = () => {
 
                 <Grid templateColumns="repeat(3, 1fr)" gap={4}>
                   {data
-                    .filter((user) =>
-                      user.nome.toLowerCase().includes(search.toLowerCase())
+                    .filter(
+                      (user) =>
+                        typeof user.nome === "string" &&
+                        user.nome.toLowerCase().includes(search.toLowerCase())
                     )
                     .map(({ _id, nome }) => (
                       <Box
@@ -269,8 +236,9 @@ const App = () => {
                 isOpen={isOpen}
                 onClose={onClose}
                 dataEdit={dataEdit}
-                data={data}
+                loadUsers={loadUsers}
                 setData={setData}
+                data={data}
               />
               <SupportButton />
             </Flex>

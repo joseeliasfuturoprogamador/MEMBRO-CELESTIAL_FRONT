@@ -32,51 +32,45 @@ const CadastroLogin = () => {
   const cancelRef = useRef();
 
   const handleChange = (e) => {
+    console.log(e.target.name, "=", e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
+      sessionStorage.removeItem("idIgreja");
+
       if (modoCadastro) {
-        // Cadastro
         const response = await axios.post("http://localhost:3000/api/cadastrar", formData);
 
         alert("Cadastro realizado com sucesso!");
 
-        // Salvar dados iniciais, mas NÃO salvar idIgreja aqui
-        localStorage.setItem("igrejaNome", formData.nome);
-        localStorage.setItem("igrejaEmail", formData.email);
-        localStorage.setItem("email", formData.email);
+        sessionStorage.setItem("igrejaNome", formData.nome);
+        sessionStorage.setItem("igrejaEmail", formData.email);
+        sessionStorage.setItem("email", formData.email);
 
-        onOpen(); // abrir modal para informar que código foi enviado
+        onOpen();
         setFormData({ nome: "", email: "", senha: "" });
       } else {
-        // Login
-        // Limpar dados anteriores
-        localStorage.removeItem("igrejaNome");
-        localStorage.removeItem("idIgreja");
+        console.log("Enviando login com:", {
+          nome: formData.nome,
+          senha: formData.senha.trim(),
+        });
 
         const response = await axios.post("http://localhost:3000/api/login", {
           nome: formData.nome,
-          senha: formData.senha,
-          email: formData.email,
+          senha: formData.senha.trim(),
         });
-        console.log("Login response:", response.data);
 
         const { idIgreja, primeiraVez } = response.data;
 
-        localStorage.setItem("igrejaNome", formData.nome);
-        localStorage.setItem("igrejaEmail", formData.email);
-        localStorage.setItem("email", formData.email);
+        sessionStorage.setItem("igrejaNome", formData.nome);
 
         if (primeiraVez) {
-          // Se é a primeira vez, abrir modal para informar sobre o código
           onOpen();
         } else {
-          // Se não é a primeira vez, salvar idIgreja aqui e ir para dashboard direto
-          localStorage.setItem("idIgreja", idIgreja);
+          sessionStorage.setItem("idIgreja", idIgreja);
           alert("Login realizado com sucesso!");
           navigate("/dashboard");
         }
@@ -88,7 +82,7 @@ const CadastroLogin = () => {
 
   const handleOk = () => {
     onClose();
-    navigate("/confirmar-codigo"); // Navegar para tela de confirmação do código
+    navigate("/confirmar-codigo");
   };
 
   return (
@@ -100,7 +94,7 @@ const CadastroLogin = () => {
         borderRadius="lg"
         overflow="hidden"
       >
-        {/* Imagem */}
+        {/* Imagem lateral */}
         <Box
           w="40%"
           bg="blue.500"
@@ -125,22 +119,35 @@ const CadastroLogin = () => {
           </Text>
 
           <VStack spacing={5} mt={6} as="form" onSubmit={handleSubmit}>
-            {modoCadastro && (
+            {modoCadastro ? (
+              <>
+                <Input
+                  placeholder="E-mail da Igreja"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  autoComplete="email"
+                />
+                <Input
+                  placeholder="Nome da Igreja"
+                  name="nome"
+                  value={formData.nome}
+                  onChange={handleChange}
+                  required
+                  autoComplete="organization"
+                />
+              </>
+            ) : (
               <Input
-                placeholder="E-mail da Igreja"
-                name="email"
-                value={formData.email}
+                placeholder="Nome ou E-mail da Igreja"
+                name="nome"
+                value={formData.nome}
                 onChange={handleChange}
                 required
+                autoComplete="organization"
               />
             )}
-            <Input
-              placeholder="Nome da Igreja"
-              name="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              required
-            />
             <Input
               placeholder="Senha"
               type="password"
@@ -148,6 +155,7 @@ const CadastroLogin = () => {
               value={formData.senha}
               onChange={handleChange}
               required
+              autoComplete="current-password"
             />
             <Button w="full" colorScheme="blue" type="submit">
               {modoCadastro ? "Registrar" : "Entrar"}
@@ -173,7 +181,7 @@ const CadastroLogin = () => {
         </Box>
       </Flex>
 
-      {/* Alerta: código enviado */}
+      {/* Modal de verificação */}
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}

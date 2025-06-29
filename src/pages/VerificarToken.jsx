@@ -17,16 +17,16 @@ const ConfirmarCodigo = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [email, setEmail] = useState(() => localStorage.getItem("igrejaEmail") || "");
+  const [email, setEmail] = useState(() => sessionStorage.getItem("igrejaEmail") || "");
 
-  // Atualiza o email do localStorage ao mudar de aba ou janela
+  // Atualiza o email do sessionStorage ao mudar de aba ou janela
   useEffect(() => {
     const handleFocus = () => {
-      setEmail(localStorage.getItem("igrejaEmail") || "");
+      setEmail(sessionStorage.getItem("igrejaEmail") || "");
     };
 
     const handleStorage = () => {
-      setEmail(localStorage.getItem("igrejaEmail") || "");
+      setEmail(sessionStorage.getItem("igrejaEmail") || "");
     };
 
     window.addEventListener("focus", handleFocus);
@@ -72,10 +72,10 @@ const ConfirmarCodigo = () => {
       }
 
       // Remove o id antigo e salva o novo corretamente
-      localStorage.removeItem("idIgreja");
-      localStorage.setItem("idIgreja", idIgreja);
-      localStorage.setItem("verified", "true");
-      localStorage.setItem("needsVerification", "false");
+      sessionStorage.removeItem("idIgreja");
+      sessionStorage.setItem("idIgreja", idIgreja);
+      sessionStorage.setItem("verified", "true");
+      sessionStorage.setItem("needsVerification", "false");
 
       toast({
         title: message || "Código verificado com sucesso!",

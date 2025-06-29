@@ -39,7 +39,7 @@ const fieldPlaceholders = {
   batismo: "Selecione a data do batismo",
 };
 
-const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
+const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers }) => {
   const [form, setForm] = useState(() =>
     Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
   );
@@ -49,7 +49,6 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
   useEffect(() => {
     if (isOpen) {
       if (dataEdit && dataEdit._id) {
-        // Editando: preenche formulário com dados existentes
         setForm(
           Object.fromEntries(
             Object.keys(fieldPlaceholders).map((field) => {
@@ -61,7 +60,6 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
           )
         );
       } else {
-        // Novo cadastro: limpa o formulário
         setForm(
           Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
         );
@@ -98,11 +96,11 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
     const dataBatismo = batismoDate.toISOString().split("T")[0];
     const dataConversao = conversaoDate ? conversaoDate.toISOString().split("T")[0] : null;
 
-    const igrejaId = localStorage.getItem("idIgreja");
+    const igrejaId = sessionStorage.getItem("idIgreja");
     if (!igrejaId) {
       toast({
         title: "Erro ao identificar a igreja.",
-        description: "ID da igreja não encontrado no localStorage.",
+        description: "ID da igreja não encontrado na sessão.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -116,7 +114,7 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
       nascimento: dataNascimento,
       batismo: dataBatismo,
       conversao: dataConversao,
-      igreja: igrejaId, // Inclui a igreja no corpo, além do cabeçalho
+      igreja: igrejaId,
     };
 
     try {
@@ -146,15 +144,16 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData }) => {
           position: "top",
         });
 
-        // Atualiza estado local para refletir mudanças sem recarregar da API
         if (isEdit) {
-          // Atualiza membro existente na lista
           setData((prev) =>
             prev.map((m) => (m._id === dataEdit._id ? response.data : m))
           );
         } else {
-          // Adiciona novo membro na lista
           setData((prev) => [...prev, response.data]);
+        }
+
+        if (typeof loadUsers === "function") {
+          await loadUsers();
         }
 
         onClose();
