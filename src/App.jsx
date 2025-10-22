@@ -21,6 +21,13 @@ import CadastroIgreja from "./pages/AuthIgreja";
 import ConfirmarCodigo from "./pages/VerificarToken";
 import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
+import Dizimos from "./componentes/Dizimos";
+
+// 🔧 Detecta automaticamente se está em localhost ou hospedado
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://membrocelestial.onrender.com"; // ✅ URL do backend Render
 
 const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -41,7 +48,7 @@ const App = () => {
     }
 
     try {
-      const response = await axios.get("http://localhost:3000/api/users", {
+      const response = await axios.get(`${API_URL}/api/users`, {
         headers: { "X-Igreja-Id": idIgreja },
       });
 
@@ -81,7 +88,7 @@ const App = () => {
 
     if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
       try {
-        await axios.delete(`http://localhost:3000/api/users/${id}`, {
+        await axios.delete(`${API_URL}/api/users/${id}`, {
           headers: {
             "X-Igreja-Id": idIgreja,
           },
@@ -98,15 +105,12 @@ const App = () => {
     if (!idIgreja) return;
 
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/users/${id}/carta`,
-        {
-          responseType: "blob",
-          headers: {
-            "X-Igreja-Id": idIgreja,
-          },
-        }
-      );
+      const response = await axios.get(`${API_URL}/api/users/${id}/carta`, {
+        responseType: "blob",
+        headers: {
+          "X-Igreja-Id": idIgreja,
+        },
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -131,6 +135,7 @@ const App = () => {
       <Route path="/" element={<Navigate to="/cadastro-igreja" />} />
       <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
       <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
+
       <Route
         path="/dashboard"
         element={
@@ -241,6 +246,19 @@ const App = () => {
                 data={data}
               />
               <SupportButton />
+            </Flex>
+          </Flex>
+        }
+      />
+
+      {/* Rota para Dízimos */}
+      <Route
+        path="/dizimos"
+        element={
+          <Flex minH="100vh">
+            <Sidebar />
+            <Flex flex="1" direction="column" align="center" bg="gray.100">
+              <Dizimos />
             </Flex>
           </Flex>
         }
