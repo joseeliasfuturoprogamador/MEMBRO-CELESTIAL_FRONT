@@ -19,20 +19,16 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const CadastroLogin = () => {
   const [modoCadastro, setModoCadastro] = useState(true);
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    senha: "",
-  });
-
+  const [formData, setFormData] = useState({ nome: "", email: "", senha: "" });
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef();
 
   const handleChange = (e) => {
-    console.log(e.target.name, "=", e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -42,23 +38,19 @@ const CadastroLogin = () => {
       sessionStorage.removeItem("idIgreja");
 
       if (modoCadastro) {
-        const response = await axios.post("http://localhost:3000/api/cadastrar", formData);
+        // CADASTRO
+        const response = await axios.post(`${API_URL}/api/cadastrar`, formData);
 
-        alert("Cadastro realizado com sucesso!");
-
+        // Salva email e nome corretamente
         sessionStorage.setItem("igrejaNome", formData.nome);
         sessionStorage.setItem("igrejaEmail", formData.email);
-        sessionStorage.setItem("email", formData.email);
 
+        alert("Cadastro realizado! Confirme pelo código enviado no email.");
         onOpen();
         setFormData({ nome: "", email: "", senha: "" });
       } else {
-        console.log("Enviando login com:", {
-          nome: formData.nome,
-          senha: formData.senha.trim(),
-        });
-
-        const response = await axios.post("http://localhost:3000/api/login", {
+        // LOGIN
+        const response = await axios.post(`${API_URL}/api/login`, {
           nome: formData.nome,
           senha: formData.senha.trim(),
         });
@@ -66,17 +58,21 @@ const CadastroLogin = () => {
         const { idIgreja, primeiraVez } = response.data;
 
         sessionStorage.setItem("igrejaNome", formData.nome);
+        sessionStorage.setItem("igrejaEmail", formData.email); // corrigido
 
         if (primeiraVez) {
+          sessionStorage.setItem("needsVerification", "true");
           onOpen();
         } else {
           sessionStorage.setItem("idIgreja", idIgreja);
+          sessionStorage.setItem("needsVerification", "false");
           alert("Login realizado com sucesso!");
           navigate("/dashboard");
         }
       }
     } catch (error) {
       alert("Erro: " + (error.response?.data?.message || "Erro ao conectar com o servidor"));
+      console.error(error.response?.data || error.message);
     }
   };
 
@@ -87,29 +83,10 @@ const CadastroLogin = () => {
 
   return (
     <Flex h="100vh" align="center" justify="center" bg="gray.100">
-      <Flex
-        w={{ base: "90%", md: "900px" }}
-        bg="white"
-        boxShadow="2xl"
-        borderRadius="lg"
-        overflow="hidden"
-      >
+      <Flex w={{ base: "90%", md: "900px" }} bg="white" boxShadow="2xl" borderRadius="lg" overflow="hidden">
         {/* Imagem lateral */}
-        <Box
-          w="40%"
-          bg="blue.500"
-          p={6}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Image
-            src="./logo.jpg"
-            alt="Logo Membro Celestial"
-            maxH="250px"
-            borderRadius="md"
-            boxShadow="xl"
-          />
+        <Box w="40%" bg="blue.500" p={6} display="flex" alignItems="center" justifyContent="center">
+          <Image src="./logo.jpg" alt="Logo Membro Celestial" maxH="250px" borderRadius="md" boxShadow="xl" />
         </Box>
 
         {/* Formulário */}
@@ -182,22 +159,15 @@ const CadastroLogin = () => {
       </Flex>
 
       {/* Modal de verificação */}
-      <AlertDialog
-        isOpen={isOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onClose}
-        isCentered
-      >
+      <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered>
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold" color="blue.700">
               Verifique seu e-mail
             </AlertDialogHeader>
-
             <AlertDialogBody>
-              O código de verificação foi enviado para o e-mail cadastrado. Cole-o na próxima tela para acessar o sistema.
+              O código de verificação foi enviado para o e-mail cadastrado. Cole-o na próxima tela.
             </AlertDialogBody>
-
             <AlertDialogFooter>
               <Button ref={cancelRef} colorScheme="blue" onClick={handleOk}>
                 OK

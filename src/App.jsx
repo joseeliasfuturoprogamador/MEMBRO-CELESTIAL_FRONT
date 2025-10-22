@@ -23,11 +23,8 @@ import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 import Dizimos from "./componentes/Dizimos";
 
-// 🔧 Detecta automaticamente se está em localhost ou hospedado
-const API_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:3000"
-    : "https://membrocelestial-4.onrender.com"; // ✅ URL do backend Render
+// 🔧 Pega a URL do backend a partir da variável de ambiente
+const API_URL = process.env.REACT_APP_API_URL;
 
 const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -64,9 +61,7 @@ const App = () => {
   useEffect(() => {
     const atualizarIdIgreja = () => {
       const novoId = sessionStorage.getItem("idIgreja");
-      if (novoId !== idIgreja) {
-        setIdIgreja(novoId || "");
-      }
+      if (novoId !== idIgreja) setIdIgreja(novoId || "");
     };
     window.addEventListener("focus", atualizarIdIgreja);
     return () => window.removeEventListener("focus", atualizarIdIgreja);
@@ -110,10 +105,7 @@ const App = () => {
   };
 
   const toggleStatus = (id) => {
-    setStatusMembros((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setStatusMembros((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -158,11 +150,7 @@ const App = () => {
 
                 <Grid templateColumns="repeat(3, 1fr)" gap={4}>
                   {data
-                    .filter(
-                      (user) =>
-                        typeof user.nome === "string" &&
-                        user.nome.toLowerCase().includes(search.toLowerCase())
-                    )
+                    .filter((user) => typeof user.nome === "string" && user.nome.toLowerCase().includes(search.toLowerCase()))
                     .map(({ _id, nome }) => (
                       <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
                         <Flex justify="space-between" align="center">
