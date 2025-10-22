@@ -12,6 +12,7 @@ import {
   InputGroup,
   InputLeftElement,
   Switch,
+  useToast,
 } from "@chakra-ui/react";
 import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
@@ -23,7 +24,7 @@ import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 import Dizimos from "./componentes/Dizimos";
 
-// 🔧 Pega a URL do backend a partir da variável de ambiente
+// 🔧 URL do backend
 const API_URL = process.env.REACT_APP_API_URL;
 
 const App = () => {
@@ -33,11 +34,16 @@ const App = () => {
   const [search, setSearch] = useState("");
   const [statusMembros, setStatusMembros] = useState({});
   const [idIgreja, setIdIgreja] = useState(() => sessionStorage.getItem("idIgreja") || "");
+  const toast = useToast();
+
+  console.log("API_URL:", API_URL);
+  console.log("idIgreja atual:", idIgreja);
 
   const loadUsers = useCallback(async () => {
     if (!idIgreja) {
       setData([]);
       setStatusMembros({});
+      console.warn("Nenhum idIgreja definido. Usuários não serão carregados.");
       return;
     }
 
@@ -45,31 +51,56 @@ const App = () => {
       const response = await axios.get(`${API_URL}/api/users`, {
         headers: { "X-Igreja-Id": idIgreja },
       });
-      setData(response.data);
 
-      const statusInicial = response.data.reduce((acc, user) => {
+      setData(response.data || []);
+
+      const statusInicial = response.data?.reduce((acc, user) => {
         acc[user._id] = true;
         return acc;
-      }, {});
+      }, {}) || {};
       setStatusMembros(statusInicial);
+
+      console.log("Usuários carregados:", response.data);
     } catch (error) {
-      console.error("Erro ao carregar usuários:", error);
+      console.error("Erro ao carregar usuários:", error.response?.data || error.message);
+      toast({
+        title: "Erro ao carregar usuários",
+        description: error.response?.data?.message || "Verifique o servidor",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
       setData([]);
     }
-  }, [idIgreja]);
+  }, [idIgreja, toast]);
 
+  // Atualiza idIgreja ao focar na aba
   useEffect(() => {
     const atualizarIdIgreja = () => {
-      const novoId = sessionStorage.getItem("idIgreja");
-      if (novoId !== idIgreja) setIdIgreja(novoId || "");
+      const novoId = sessionStorage.getItem("idIgreja") || "";
+      if (novoId !== idIgreja) setIdIgreja(novoId);
     };
     window.addEventListener("focus", atualizarIdIgreja);
     return () => window.removeEventListener("focus", atualizarIdIgreja);
   }, [idIgreja]);
 
+  // Carrega usuários quando idIgreja muda
   useEffect(() => {
     loadUsers();
   }, [idIgreja, loadUsers]);
+
+  // Redireciona para cadastro se não houver idIgreja
+  useEffect(() => {
+    if (!idIgreja) {
+      toast({
+        title: "Igreja não identificada",
+        description: "Faça login ou cadastro antes de acessar o dashboard",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  }, [idIgreja, toast]);
 
   const handleRemove = async (id) => {
     if (!id || !idIgreja) return;
@@ -80,7 +111,14 @@ const App = () => {
         });
         loadUsers();
       } catch (error) {
-        console.error("Erro ao deletar usuário:", error);
+        console.error("Erro ao deletar usuário:", error.response?.data || error.message);
+        toast({
+          title: "Erro ao deletar usuário",
+          description: error.response?.data?.message || "Verifique o servidor",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        });
       }
     }
   };
@@ -100,7 +138,14 @@ const App = () => {
       link.click();
       link.remove();
     } catch (error) {
-      console.error("Erro ao gerar carta", error);
+      console.error("Erro ao gerar carta:", error.response?.data || error.message);
+      toast({
+        title: "Erro ao gerar carta",
+        description: "Verifique o servidor",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
     }
   };
 
