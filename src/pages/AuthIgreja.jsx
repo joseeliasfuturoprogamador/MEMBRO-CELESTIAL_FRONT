@@ -9,9 +9,9 @@ import {
   Image,
   useDisclosure,
   AlertDialog,
-  AlertDialogBody,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogBody,
   AlertDialogContent,
   AlertDialogOverlay,
   Link,
@@ -19,6 +19,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+// ✅ URL do backend
 const API_URL = process.env.REACT_APP_API_URL;
 
 const CadastroLogin = () => {
@@ -37,11 +38,12 @@ const CadastroLogin = () => {
     try {
       sessionStorage.removeItem("idIgreja");
 
+      if (!API_URL) throw new Error("API_URL não definida!");
+
       if (modoCadastro) {
         // CADASTRO
         const response = await axios.post(`${API_URL}/api/cadastrar`, formData);
 
-        // Salva email e nome corretamente
         sessionStorage.setItem("igrejaNome", formData.nome);
         sessionStorage.setItem("igrejaEmail", formData.email);
 
@@ -58,7 +60,7 @@ const CadastroLogin = () => {
         const { idIgreja, primeiraVez } = response.data;
 
         sessionStorage.setItem("igrejaNome", formData.nome);
-        sessionStorage.setItem("igrejaEmail", formData.email); // corrigido
+        sessionStorage.setItem("igrejaEmail", formData.nome);
 
         if (primeiraVez) {
           sessionStorage.setItem("needsVerification", "true");
@@ -71,7 +73,7 @@ const CadastroLogin = () => {
         }
       }
     } catch (error) {
-      alert("Erro: " + (error.response?.data?.message || "Erro ao conectar com o servidor"));
+      alert("Erro: " + (error.response?.data?.message || error.message));
       console.error(error.response?.data || error.message);
     }
   };
@@ -83,13 +85,24 @@ const CadastroLogin = () => {
 
   return (
     <Flex h="100vh" align="center" justify="center" bg="gray.100">
-      <Flex w={{ base: "90%", md: "900px" }} bg="white" boxShadow="2xl" borderRadius="lg" overflow="hidden">
-        {/* Imagem lateral */}
-        <Box w="40%" bg="blue.500" p={6} display="flex" alignItems="center" justifyContent="center">
+      <Flex
+        w={{ base: "90%", md: "900px" }}
+        bg="white"
+        boxShadow="2xl"
+        borderRadius="lg"
+        overflow="hidden"
+      >
+        <Box
+          w="40%"
+          bg="blue.500"
+          p={6}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
           <Image src="./logo.jpg" alt="Logo Membro Celestial" maxH="250px" borderRadius="md" boxShadow="xl" />
         </Box>
 
-        {/* Formulário */}
         <Box w="60%" p={10}>
           <Text fontSize="3xl" fontWeight="bold" textAlign="center" color="blue.700">
             {modoCadastro ? "Criar Conta da Igreja" : "Login da Igreja"}
@@ -158,7 +171,6 @@ const CadastroLogin = () => {
         </Box>
       </Flex>
 
-      {/* Modal de verificação */}
       <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered>
         <AlertDialogOverlay>
           <AlertDialogContent>

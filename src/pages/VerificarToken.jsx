@@ -47,6 +47,8 @@ const ConfirmarCodigo = () => {
     }
 
     try {
+      if (!API_URL) throw new Error("API_URL não definida!");
+
       const response = await axios.post(`${API_URL}/api/confirmar`, { email, codigo });
       const { idIgreja, message } = response.data;
 
@@ -63,7 +65,7 @@ const ConfirmarCodigo = () => {
 
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Erro ao verificar código");
+      setError(err.response?.data?.message || err.message);
       console.error("Erro na verificação:", err.response?.data?.message || err.message);
     }
   };
