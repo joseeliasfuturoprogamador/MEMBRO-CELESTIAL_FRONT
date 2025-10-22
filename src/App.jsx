@@ -27,7 +27,7 @@ import Dizimos from "./componentes/Dizimos";
 const API_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:3000"
-    : "https://membrocelestial.onrender.com"; // ✅ URL do backend Render
+    : "https://membrocelestial-4.onrender.com"; // ✅ URL do backend Render
 
 const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -35,10 +35,7 @@ const App = () => {
   const [dataEdit, setDataEdit] = useState({});
   const [search, setSearch] = useState("");
   const [statusMembros, setStatusMembros] = useState({});
-
-  const [idIgreja, setIdIgreja] = useState(() => {
-    return sessionStorage.getItem("idIgreja") || "";
-  });
+  const [idIgreja, setIdIgreja] = useState(() => sessionStorage.getItem("idIgreja") || "");
 
   const loadUsers = useCallback(async () => {
     if (!idIgreja) {
@@ -51,7 +48,6 @@ const App = () => {
       const response = await axios.get(`${API_URL}/api/users`, {
         headers: { "X-Igreja-Id": idIgreja },
       });
-
       setData(response.data);
 
       const statusInicial = response.data.reduce((acc, user) => {
@@ -72,11 +68,8 @@ const App = () => {
         setIdIgreja(novoId || "");
       }
     };
-
     window.addEventListener("focus", atualizarIdIgreja);
-    return () => {
-      window.removeEventListener("focus", atualizarIdIgreja);
-    };
+    return () => window.removeEventListener("focus", atualizarIdIgreja);
   }, [idIgreja]);
 
   useEffect(() => {
@@ -85,15 +78,11 @@ const App = () => {
 
   const handleRemove = async (id) => {
     if (!id || !idIgreja) return;
-
     if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
       try {
         await axios.delete(`${API_URL}/api/users/${id}`, {
-          headers: {
-            "X-Igreja-Id": idIgreja,
-          },
+          headers: { "X-Igreja-Id": idIgreja },
         });
-
         loadUsers();
       } catch (error) {
         console.error("Erro ao deletar usuário:", error);
@@ -103,13 +92,10 @@ const App = () => {
 
   const handleGenerateLetter = async (id) => {
     if (!idIgreja) return;
-
     try {
       const response = await axios.get(`${API_URL}/api/users/${id}/carta`, {
         responseType: "blob",
-        headers: {
-          "X-Igreja-Id": idIgreja,
-        },
+        headers: { "X-Igreja-Id": idIgreja },
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -178,17 +164,9 @@ const App = () => {
                         user.nome.toLowerCase().includes(search.toLowerCase())
                     )
                     .map(({ _id, nome }) => (
-                      <Box
-                        key={_id}
-                        p={4}
-                        borderWidth="1px"
-                        borderRadius="lg"
-                        boxShadow="sm"
-                      >
+                      <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
                         <Flex justify="space-between" align="center">
-                          <Text fontWeight="bold" fontSize="lg">
-                            {nome}
-                          </Text>
+                          <Text fontWeight="bold" fontSize="lg">{nome}</Text>
                           <Flex align="center">
                             <Text fontSize="sm" mr={2} fontWeight="bold">
                               {statusMembros[_id] ? "Ativo" : "Inativo"}
@@ -251,7 +229,6 @@ const App = () => {
         }
       />
 
-      {/* Rota para Dízimos */}
       <Route
         path="/dizimos"
         element={
