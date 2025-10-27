@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Box, Button, Input, Text, VStack, Flex, useToast } from "@chakra-ui/react";
 
-const API_URL = process.env.REACT_APP_API_URL;
+// 🔧 URL do backend (Vite)
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ConfirmarCodigo = () => {
   const [codigo, setCodigo] = useState("");
@@ -13,6 +14,7 @@ const ConfirmarCodigo = () => {
 
   const [email, setEmail] = useState(() => sessionStorage.getItem("igrejaEmail") || "");
 
+  // Atualiza email se mudar no sessionStorage ou foco da aba
   useEffect(() => {
     const handleFocus = () => setEmail(sessionStorage.getItem("igrejaEmail") || "");
     const handleStorage = () => setEmail(sessionStorage.getItem("igrejaEmail") || "");
@@ -26,6 +28,7 @@ const ConfirmarCodigo = () => {
     };
   }, []);
 
+  // Redireciona se email não existir
   useEffect(() => {
     if (!email) {
       toast({
@@ -35,7 +38,7 @@ const ConfirmarCodigo = () => {
         duration: 4000,
         isClosable: true,
       });
-      navigate("/");
+      navigate("/cadastro-igreja");
     }
   }, [email, navigate, toast]);
 
@@ -52,6 +55,7 @@ const ConfirmarCodigo = () => {
       const response = await axios.post(`${API_URL}/api/confirmar`, { email, codigo });
       const { idIgreja, message } = response.data;
 
+      // Salva dados no sessionStorage
       sessionStorage.setItem("idIgreja", idIgreja);
       sessionStorage.setItem("verified", "true");
       sessionStorage.setItem("needsVerification", "false");
@@ -77,10 +81,24 @@ const ConfirmarCodigo = () => {
           Confirme o código enviado por e-mail
         </Text>
         <VStack spacing={4}>
-          <Input placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} maxLength={6} autoFocus />
-          {error && <Text color="red.500" fontSize="sm" textAlign="center">{error}</Text>}
-          <Button colorScheme="blue" w="full" onClick={handleSubmit}>Confirmar</Button>
-          <Button variant="link" color="gray.500" mt={2} onClick={() => navigate("/")}>Voltar para login</Button>
+          <Input
+            placeholder="Código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+            maxLength={6}
+            autoFocus
+          />
+          {error && (
+            <Text color="red.500" fontSize="sm" textAlign="center">
+              {error}
+            </Text>
+          )}
+          <Button colorScheme="blue" w="full" onClick={handleSubmit}>
+            Confirmar
+          </Button>
+          <Button variant="link" color="gray.500" mt={2} onClick={() => navigate("/cadastro-igreja")}>
+            Voltar para login
+          </Button>
         </VStack>
       </Box>
     </Flex>

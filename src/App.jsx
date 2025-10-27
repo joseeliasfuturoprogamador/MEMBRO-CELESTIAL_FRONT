@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
@@ -24,8 +24,8 @@ import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 import Dizimos from "./componentes/Dizimos";
 
-// 🔧 URL do backend
-const API_URL = process.env.REACT_APP_API_URL;
+// 🔧 URL do backend (Vite)
+const API_URL = import.meta.env.VITE_API_URL;
 
 const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -35,6 +35,7 @@ const App = () => {
   const [statusMembros, setStatusMembros] = useState({});
   const [idIgreja, setIdIgreja] = useState(() => sessionStorage.getItem("idIgreja") || "");
   const toast = useToast();
+  const navigate = useNavigate();
 
   console.log("API_URL:", API_URL);
   console.log("idIgreja atual:", idIgreja);
@@ -99,8 +100,9 @@ const App = () => {
         duration: 4000,
         isClosable: true,
       });
+      navigate("/cadastro-igreja");
     }
-  }, [idIgreja, toast]);
+  }, [idIgreja, toast, navigate]);
 
   const handleRemove = async (id) => {
     if (!id || !idIgreja) return;
@@ -195,11 +197,17 @@ const App = () => {
 
                 <Grid templateColumns="repeat(3, 1fr)" gap={4}>
                   {data
-                    .filter((user) => typeof user.nome === "string" && user.nome.toLowerCase().includes(search.toLowerCase()))
+                    .filter(
+                      (user) =>
+                        typeof user.nome === "string" &&
+                        user.nome.toLowerCase().includes(search.toLowerCase())
+                    )
                     .map(({ _id, nome }) => (
                       <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
                         <Flex justify="space-between" align="center">
-                          <Text fontWeight="bold" fontSize="lg">{nome}</Text>
+                          <Text fontWeight="bold" fontSize="lg">
+                            {nome}
+                          </Text>
                           <Flex align="center">
                             <Text fontSize="sm" mr={2} fontWeight="bold">
                               {statusMembros[_id] ? "Ativo" : "Inativo"}

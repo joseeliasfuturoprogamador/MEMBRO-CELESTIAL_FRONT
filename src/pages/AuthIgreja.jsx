@@ -19,8 +19,8 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-// ✅ URL do backend
-const API_URL = process.env.REACT_APP_API_URL;
+// 🔧 URL do backend (Vite)
+const API_URL = import.meta.env.VITE_API_URL;
 
 const CadastroLogin = () => {
   const [modoCadastro, setModoCadastro] = useState(true);
@@ -42,7 +42,7 @@ const CadastroLogin = () => {
 
       if (modoCadastro) {
         // CADASTRO
-        const response = await axios.post(`${API_URL}/api/cadastrar`, formData);
+        await axios.post(`${API_URL}/api/cadastrar`, formData);
 
         sessionStorage.setItem("igrejaNome", formData.nome);
         sessionStorage.setItem("igrejaEmail", formData.email);
@@ -100,11 +100,22 @@ const CadastroLogin = () => {
           alignItems="center"
           justifyContent="center"
         >
-          <Image src="./logo.jpg" alt="Logo Membro Celestial" maxH="250px" borderRadius="md" boxShadow="xl" />
+          <Image
+            src="./logo.jpg"
+            alt="Logo Membro Celestial"
+            maxH="250px"
+            borderRadius="md"
+            boxShadow="xl"
+          />
         </Box>
 
         <Box w="60%" p={10}>
-          <Text fontSize="3xl" fontWeight="bold" textAlign="center" color="blue.700">
+          <Text
+            fontSize="3xl"
+            fontWeight="bold"
+            textAlign="center"
+            color="blue.700"
+          >
             {modoCadastro ? "Criar Conta da Igreja" : "Login da Igreja"}
           </Text>
 
@@ -154,7 +165,9 @@ const CadastroLogin = () => {
 
           {!modoCadastro && (
             <Text mt={2} textAlign="center" color="blue.500">
-              <Link onClick={() => navigate("/esqueci-senha")}>Esqueceu a senha?</Link>
+              <Link onClick={() => navigate("/esqueci-senha")}>
+                Esqueceu a senha?
+              </Link>
             </Text>
           )}
 
@@ -166,19 +179,31 @@ const CadastroLogin = () => {
             cursor="pointer"
             onClick={() => setModoCadastro(!modoCadastro)}
           >
-            {modoCadastro ? "Já tem conta? Faça login!" : "Não tem conta? Cadastre-se!"}
+            {modoCadastro
+              ? "Já tem conta? Faça login!"
+              : "Não tem conta? Cadastre-se!"}
           </Text>
         </Box>
       </Flex>
 
-      <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered>
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+        isCentered
+      >
         <AlertDialogOverlay>
           <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="blue.700">
+            <AlertDialogHeader
+              fontSize="lg"
+              fontWeight="bold"
+              color="blue.700"
+            >
               Verifique seu e-mail
             </AlertDialogHeader>
             <AlertDialogBody>
-              O código de verificação foi enviado para o e-mail cadastrado. Cole-o na próxima tela.
+              O código de verificação foi enviado para o e-mail cadastrado. Cole-o
+              na próxima tela.
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button ref={cancelRef} colorScheme="blue" onClick={handleOk}>

@@ -39,6 +39,9 @@ const fieldPlaceholders = {
   batismo: "Selecione a data do batismo",
 };
 
+// ✅ Usando variável de ambiente Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers }) => {
   const [form, setForm] = useState(() =>
     Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
@@ -120,8 +123,8 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers })
     try {
       const isEdit = dataEdit && dataEdit._id;
       const url = isEdit
-        ? `http://localhost:3000/api/users/${dataEdit._id}`
-        : `http://localhost:3000/api/users`;
+        ? `${API_URL}/api/users/${dataEdit._id}`
+        : `${API_URL}/api/users`;
 
       const method = isEdit ? axios.put : axios.post;
 
