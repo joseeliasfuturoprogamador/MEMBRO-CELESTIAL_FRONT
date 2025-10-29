@@ -15,6 +15,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   Link,
+  useToast,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +29,7 @@ const CadastroLogin = () => {
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef();
+  const toast = useToast();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,32 +37,45 @@ const CadastroLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       sessionStorage.removeItem("idIgreja");
 
       if (!API_URL) throw new Error("API_URL não definida!");
 
       if (modoCadastro) {
-        // CADASTRO
-        await axios.post(`${API_URL}/api/cadastrar`, formData);
+        // ✅ CADASTRO DE NOVA IGREJA
+        const response = await axios.post(`${API_URL}/api/cadastrar`, formData);
 
+        // Verifica resposta do backend
+        const message = response.data?.message || "Cadastro realizado!";
+        toast({
+          title: message,
+          status: "success",
+          duration: 4000,
+          isClosable: true,
+          position: "top",
+        });
+
+        // Armazena e-mail e nome da igreja
         sessionStorage.setItem("igrejaNome", formData.nome);
         sessionStorage.setItem("igrejaEmail", formData.email);
+        sessionStorage.setItem("needsVerification", "true");
 
-        alert("Cadastro realizado! Confirme pelo código enviado no email.");
+        // Abre aviso para confirmar código
         onOpen();
         setFormData({ nome: "", email: "", senha: "" });
       } else {
-        // LOGIN
+        // ✅ LOGIN DE IGREJA EXISTENTE
         const response = await axios.post(`${API_URL}/api/login`, {
           nome: formData.nome,
           senha: formData.senha.trim(),
         });
 
-        const { idIgreja, primeiraVez } = response.data;
+        const { idIgreja, primeiraVez, email } = response.data;
 
         sessionStorage.setItem("igrejaNome", formData.nome);
-        sessionStorage.setItem("igrejaEmail", formData.nome);
+        sessionStorage.setItem("igrejaEmail", email || formData.email || "");
 
         if (primeiraVez) {
           sessionStorage.setItem("needsVerification", "true");
@@ -68,13 +83,27 @@ const CadastroLogin = () => {
         } else {
           sessionStorage.setItem("idIgreja", idIgreja);
           sessionStorage.setItem("needsVerification", "false");
-          alert("Login realizado com sucesso!");
+          toast({
+            title: "Login realizado com sucesso!",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+            position: "top",
+          });
           navigate("/dashboard");
         }
       }
     } catch (error) {
-      alert("Erro: " + (error.response?.data?.message || error.message));
-      console.error(error.response?.data || error.message);
+      const msg = error.response?.data?.message || error.message || "Erro desconhecido.";
+      toast({
+        title: "Erro ao processar.",
+        description: msg,
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+      console.error("Erro:", error);
     }
   };
 
@@ -186,6 +215,7 @@ const CadastroLogin = () => {
         </Box>
       </Flex>
 
+      {/* Modal de confirmação */}
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
@@ -202,8 +232,8 @@ const CadastroLogin = () => {
               Verifique seu e-mail
             </AlertDialogHeader>
             <AlertDialogBody>
-              O código de verificação foi enviado para o e-mail cadastrado. Cole-o
-              na próxima tela.
+              O código de verificação foi enviado para o e-mail cadastrado. 
+              Cole-o na próxima tela para ativar sua conta.
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button ref={cancelRef} colorScheme="blue" onClick={handleOk}>
