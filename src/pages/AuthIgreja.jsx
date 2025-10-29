@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -7,28 +7,19 @@ import {
   Text,
   VStack,
   Image,
-  useDisclosure,
-  AlertDialog,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogOverlay,
-  Link,
   useToast,
+  Link,
 } from "@chakra-ui/react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-// 🔧 URL do backend (Vite)
+// 🔧 URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
 
 const CadastroLogin = () => {
   const [modoCadastro, setModoCadastro] = useState(true);
   const [formData, setFormData] = useState({ nome: "", email: "", senha: "" });
   const navigate = useNavigate();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const cancelRef = useRef();
   const toast = useToast();
 
   const handleChange = (e) => {
@@ -37,79 +28,64 @@ const CadastroLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      sessionStorage.removeItem("idIgreja");
-
       if (!API_URL) throw new Error("API_URL não definida!");
 
       if (modoCadastro) {
-        // ✅ CADASTRO DE NOVA IGREJA
+        // CADASTRO
         const response = await axios.post(`${API_URL}/api/cadastrar`, formData);
 
-        // Verifica resposta do backend
-        const message = response.data?.message || "Cadastro realizado!";
-        toast({
-          title: message,
-          status: "success",
-          duration: 4000,
-          isClosable: true,
-          position: "top",
-        });
-
-        // Armazena e-mail e nome da igreja
-        sessionStorage.setItem("igrejaNome", formData.nome);
+        // Salva temporariamente email e idIgreja retornado pelo backend
         sessionStorage.setItem("igrejaEmail", formData.email);
-        sessionStorage.setItem("needsVerification", "true");
+        sessionStorage.setItem("idIgrejaTemp", response.data.idIgreja);
 
-        // Abre aviso para confirmar código
-        onOpen();
-        setFormData({ nome: "", email: "", senha: "" });
-      } else {
-        // ✅ LOGIN DE IGREJA EXISTENTE
-        const response = await axios.post(`${API_URL}/api/login`, {
-          nome: formData.nome,
-          senha: formData.senha.trim(),
+        toast({
+          title: "Cadastro realizado!",
+          description: "Verifique seu email e insira o código para confirmar.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
         });
 
-        const { idIgreja, primeiraVez, email } = response.data;
+        // Redireciona para tela de confirmação de código
+        navigate("/confirmar-codigo");
+      } else {
+        // LOGIN
+        const response = await axios.post(`${API_URL}/api/login`, {
+          email: formData.email,
+          senha: formData.senha,
+        });
 
-        sessionStorage.setItem("igrejaNome", formData.nome);
-        sessionStorage.setItem("igrejaEmail", email || formData.email || "");
+        const { idIgreja, confirmado } = response.data;
 
-        if (primeiraVez) {
-          sessionStorage.setItem("needsVerification", "true");
-          onOpen();
+        if (!confirmado) {
+          sessionStorage.setItem("igrejaEmail", formData.email);
+          sessionStorage.setItem("idIgrejaTemp", idIgreja);
+
+          toast({
+            title: "Confirmação pendente",
+            description: "Verifique seu email e insira o código para confirmar.",
+            status: "warning",
+            duration: 5000,
+            isClosable: true,
+          });
+
+          navigate("/confirmar-codigo");
         } else {
           sessionStorage.setItem("idIgreja", idIgreja);
-          sessionStorage.setItem("needsVerification", "false");
-          toast({
-            title: "Login realizado com sucesso!",
-            status: "success",
-            duration: 3000,
-            isClosable: true,
-            position: "top",
-          });
           navigate("/dashboard");
         }
       }
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || "Erro desconhecido.";
       toast({
-        title: "Erro ao processar.",
-        description: msg,
+        title: "Erro",
+        description: error.response?.data?.message || error.message,
         status: "error",
-        duration: 4000,
+        duration: 5000,
         isClosable: true,
-        position: "top",
       });
-      console.error("Erro:", error);
+      console.error(error.response?.data || error.message);
     }
-  };
-
-  const handleOk = () => {
-    onClose();
-    navigate("/confirmar-codigo");
   };
 
   return (
@@ -149,7 +125,7 @@ const CadastroLogin = () => {
           </Text>
 
           <VStack spacing={5} mt={6} as="form" onSubmit={handleSubmit}>
-            {modoCadastro ? (
+            {modoCadastro && (
               <>
                 <Input
                   placeholder="E-mail da Igreja"
@@ -168,14 +144,15 @@ const CadastroLogin = () => {
                   autoComplete="organization"
                 />
               </>
-            ) : (
+            )}
+            {!modoCadastro && (
               <Input
-                placeholder="Nome ou E-mail da Igreja"
-                name="nome"
-                value={formData.nome}
+                placeholder="E-mail da Igreja"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 required
-                autoComplete="organization"
+                autoComplete="email"
               />
             )}
             <Input
@@ -214,35 +191,6 @@ const CadastroLogin = () => {
           </Text>
         </Box>
       </Flex>
-
-      {/* Modal de confirmação */}
-      <AlertDialog
-        isOpen={isOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onClose}
-        isCentered
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader
-              fontSize="lg"
-              fontWeight="bold"
-              color="blue.700"
-            >
-              Verifique seu e-mail
-            </AlertDialogHeader>
-            <AlertDialogBody>
-              O código de verificação foi enviado para o e-mail cadastrado. 
-              Cole-o na próxima tela para ativar sua conta.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} colorScheme="blue" onClick={handleOk}>
-                OK
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Flex>
   );
 };

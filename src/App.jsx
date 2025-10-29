@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
@@ -8,11 +8,10 @@ import {
   Grid,
   Text,
   Input,
-  Heading,
   InputGroup,
   InputLeftElement,
-  Switch,
   useToast,
+  Heading,
 } from "@chakra-ui/react";
 import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
@@ -24,7 +23,7 @@ import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 import Dizimos from "./componentes/Dizimos";
 
-// 🔧 URL do backend (Vite)
+// 🔧 URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
 
 const App = () => {
@@ -35,16 +34,11 @@ const App = () => {
   const [statusMembros, setStatusMembros] = useState({});
   const [idIgreja, setIdIgreja] = useState(() => sessionStorage.getItem("idIgreja") || "");
   const toast = useToast();
-  const navigate = useNavigate();
-
-  console.log("API_URL:", API_URL);
-  console.log("idIgreja atual:", idIgreja);
 
   const loadUsers = useCallback(async () => {
     if (!idIgreja) {
       setData([]);
       setStatusMembros({});
-      console.warn("Nenhum idIgreja definido. Usuários não serão carregados.");
       return;
     }
 
@@ -61,7 +55,6 @@ const App = () => {
       }, {}) || {};
       setStatusMembros(statusInicial);
 
-      console.log("Usuários carregados:", response.data);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error.response?.data || error.message);
       toast({
@@ -87,73 +80,8 @@ const App = () => {
 
   // Carrega usuários quando idIgreja muda
   useEffect(() => {
-    loadUsers();
+    if (idIgreja) loadUsers();
   }, [idIgreja, loadUsers]);
-
-  // Redireciona para cadastro se não houver idIgreja
-  useEffect(() => {
-    if (!idIgreja) {
-      toast({
-        title: "Igreja não identificada",
-        description: "Faça login ou cadastro antes de acessar o dashboard",
-        status: "warning",
-        duration: 4000,
-        isClosable: true,
-      });
-      navigate("/cadastro-igreja");
-    }
-  }, [idIgreja, toast, navigate]);
-
-  const handleRemove = async (id) => {
-    if (!id || !idIgreja) return;
-    if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
-      try {
-        await axios.delete(`${API_URL}/api/users/${id}`, {
-          headers: { "X-Igreja-Id": idIgreja },
-        });
-        loadUsers();
-      } catch (error) {
-        console.error("Erro ao deletar usuário:", error.response?.data || error.message);
-        toast({
-          title: "Erro ao deletar usuário",
-          description: error.response?.data?.message || "Verifique o servidor",
-          status: "error",
-          duration: 4000,
-          isClosable: true,
-        });
-      }
-    }
-  };
-
-  const handleGenerateLetter = async (id) => {
-    if (!idIgreja) return;
-    try {
-      const response = await axios.get(`${API_URL}/api/users/${id}/carta`, {
-        responseType: "blob",
-        headers: { "X-Igreja-Id": idIgreja },
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Carta_${id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error("Erro ao gerar carta:", error.response?.data || error.message);
-      toast({
-        title: "Erro ao gerar carta",
-        description: "Verifique o servidor",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const toggleStatus = (id) => {
-    setStatusMembros((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
     <Routes>
@@ -164,121 +92,130 @@ const App = () => {
       <Route
         path="/dashboard"
         element={
-          <Flex minH="100vh">
-            <Sidebar />
-            <Flex flex="1" direction="column" align="center" bg="gray.100">
-              <Box bg="blue.500" w="100%" py={4} textAlign="center">
-                <Heading color="white">MEMBRO CELESTIAL</Heading>
-              </Box>
+          idIgreja ? (
+            <Flex minH="100vh">
+              <Sidebar />
+              <Flex flex="1" direction="column" align="center" bg="gray.100">
+                <Box bg="blue.500" w="100%" py={4} textAlign="center">
+                  <Heading color="white">MEMBRO CELESTIAL</Heading>
+                </Box>
 
-              <Box w="80%" my={6} p={4} bg="white" borderRadius="md" boxShadow="lg">
-                <Flex justify="space-between" mb={4}>
-                  <Button
-                    leftIcon={<AddIcon />}
-                    colorScheme="blue"
-                    onClick={() => {
-                      setDataEdit({});
-                      onOpen();
-                    }}
-                  >
-                    Criar novo Membro
-                  </Button>
-                  <InputGroup width="300px">
-                    <InputLeftElement pointerEvents="none">
-                      <SearchIcon color="black" />
-                    </InputLeftElement>
-                    <Input
-                      placeholder="Pesquisar Membro"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </InputGroup>
-                </Flex>
+                <Box w="80%" my={6} p={4} bg="white" borderRadius="md" boxShadow="lg">
+                  <Flex justify="space-between" mb={4}>
+                    <Button
+                      leftIcon={<AddIcon />}
+                      colorScheme="blue"
+                      onClick={() => {
+                        setDataEdit({});
+                        onOpen();
+                      }}
+                    >
+                      Criar novo Membro
+                    </Button>
+                    <InputGroup width="300px">
+                      <InputLeftElement pointerEvents="none">
+                        <SearchIcon color="black" />
+                      </InputLeftElement>
+                      <Input
+                        placeholder="Pesquisar Membro"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </InputGroup>
+                  </Flex>
 
-                <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-                  {data
-                    .filter(
-                      (user) =>
-                        typeof user.nome === "string" &&
-                        user.nome.toLowerCase().includes(search.toLowerCase())
-                    )
-                    .map(({ _id, nome }) => (
-                      <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
-                        <Flex justify="space-between" align="center">
-                          <Text fontWeight="bold" fontSize="lg">
-                            {nome}
-                          </Text>
-                          <Flex align="center">
-                            <Text fontSize="sm" mr={2} fontWeight="bold">
-                              {statusMembros[_id] ? "Ativo" : "Inativo"}
-                            </Text>
-                            <Switch
-                              colorScheme="green"
-                              isChecked={statusMembros[_id]}
-                              onChange={() => toggleStatus(_id)}
-                            />
+                  <Grid templateColumns="repeat(3, 1fr)" gap={4}>
+                    {data
+                      .filter(
+                        (user) =>
+                          typeof user.nome === "string" &&
+                          user.nome.toLowerCase().includes(search.toLowerCase())
+                      )
+                      .map(({ _id, nome }) => (
+                        <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
+                          <Flex justify="space-between" align="center">
+                            <Text fontWeight="bold" fontSize="lg">{nome}</Text>
+                            <Flex align="center">
+                              <Text fontSize="sm" mr={2} fontWeight="bold">
+                                {statusMembros[_id] ? "Ativo" : "Inativo"}
+                              </Text>
+                              <Button size="sm" colorScheme="green" onClick={() => setStatusMembros((prev) => ({ ...prev, [_id]: !prev[_id] }))}>
+                                Alternar
+                              </Button>
+                            </Flex>
                           </Flex>
-                        </Flex>
 
-                        <Flex mt={3} justify="space-between">
-                          <Button
-                            size="sm"
-                            leftIcon={<EditIcon />}
-                            colorScheme="yellow"
-                            onClick={() => {
-                              setDataEdit(data.find((user) => user._id === _id));
-                              onOpen();
-                            }}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            leftIcon={<DeleteIcon />}
-                            colorScheme="red"
-                            onClick={() => handleRemove(_id)}
-                          >
-                            Excluir
-                          </Button>
-                        </Flex>
+                          <Flex mt={3} justify="space-between">
+                            <Button
+                              size="sm"
+                              leftIcon={<EditIcon />}
+                              colorScheme="yellow"
+                              onClick={() => {
+                                setDataEdit(data.find((user) => user._id === _id));
+                                onOpen();
+                              }}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              leftIcon={<DeleteIcon />}
+                              colorScheme="red"
+                              onClick={async () => {
+                                if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
+                                  try {
+                                    await axios.delete(`${API_URL}/api/users/${_id}`, { headers: { "X-Igreja-Id": idIgreja } });
+                                    loadUsers();
+                                  } catch (error) {
+                                    toast({
+                                      title: "Erro ao deletar usuário",
+                                      description: error.response?.data?.message || "Verifique o servidor",
+                                      status: "error",
+                                      duration: 4000,
+                                      isClosable: true,
+                                    });
+                                  }
+                                }
+                              }}
+                            >
+                              Excluir
+                            </Button>
+                          </Flex>
+                        </Box>
+                      ))}
+                  </Grid>
+                </Box>
 
-                        <Button
-                          size="sm"
-                          mt={3}
-                          colorScheme="blue"
-                          onClick={() => handleGenerateLetter(_id)}
-                          width="100%"
-                        >
-                          Gerar Carta
-                        </Button>
-                      </Box>
-                    ))}
-                </Grid>
-              </Box>
-
-              <ModalComp
-                isOpen={isOpen}
-                onClose={onClose}
-                dataEdit={dataEdit}
-                loadUsers={loadUsers}
-                setData={setData}
-                data={data}
-              />
-              <SupportButton />
+                <ModalComp
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  dataEdit={dataEdit}
+                  loadUsers={loadUsers}
+                  setData={setData}
+                  data={data}
+                />
+                <SupportButton />
+              </Flex>
             </Flex>
-          </Flex>
+          ) : (
+            <Navigate to="/cadastro-igreja" />
+          )
         }
       />
 
       <Route
         path="/dizimos"
         element={
-          <Flex minH="100vh">
-            <Sidebar />
-            <Flex flex="1" direction="column" align="center" bg="gray.100">
-              <Dizimos />
+          idIgreja ? (
+            <Flex minH="100vh">
+              <Sidebar />
+              <Flex flex="1" direction="column" align="center" bg="gray.100">
+                <Dizimos />
+              </Flex>
             </Flex>
-          </Flex>
+          ) : (
+            <Navigate to="/cadastro-igreja" />
+          )
         }
       />
     </Routes>
