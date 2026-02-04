@@ -21,21 +21,18 @@ const ConfirmarCodigo = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  // Recupera email e id temporário da igreja
   const email = sessionStorage.getItem("igrejaEmail");
   const idIgrejaTemp = sessionStorage.getItem("idIgrejaTemp");
 
   useEffect(() => {
-    if (!email || !idIgrejaTemp) {
-      navigate("/cadastro-igreja");
-    }
+    if (!email || !idIgrejaTemp) navigate("/cadastro-igreja");
   }, [email, idIgrejaTemp, navigate]);
 
   const handleConfirmar = async () => {
     if (!codigo.trim()) {
       toast({
         title: "Campo vazio",
-        description: "Por favor, insira o código recebido por email.",
+        description: "Por favor, insira o código recebido por e-mail.",
         status: "warning",
         duration: 4000,
         isClosable: true,
@@ -45,13 +42,7 @@ const ConfirmarCodigo = () => {
 
     try {
       setLoading(true);
-
-      const response = await axios.post(`${API_URL}/api/confirmar-cadastro`, {
-        email,
-        codigo,
-      });
-
-      // Salva idIgreja definitivo retornado pelo backend
+      const response = await axios.post(`${API_URL}/api/confirmar`, { email, codigo });
       sessionStorage.setItem("idIgreja", response.data.idIgreja);
       sessionStorage.removeItem("idIgrejaTemp");
       sessionStorage.removeItem("igrejaEmail");
@@ -63,10 +54,8 @@ const ConfirmarCodigo = () => {
         duration: 4000,
         isClosable: true,
       });
-
       navigate("/dashboard");
     } catch (error) {
-      console.error(error.response?.data || error.message);
       toast({
         title: "Erro ao confirmar",
         description: error.response?.data?.message || "Código inválido ou expirado.",
@@ -79,15 +68,31 @@ const ConfirmarCodigo = () => {
     }
   };
 
+  const handleColarCodigo = async () => {
+    try {
+      const texto = await navigator.clipboard.readText();
+      setCodigo(texto);
+      toast({
+        title: "Código colado",
+        description: `Código copiado: ${texto}`,
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch {
+      toast({
+        title: "Falha ao colar",
+        description: "Não foi possível acessar a área de transferência.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   return (
     <Flex h="100vh" align="center" justify="center" bg="gray.100">
-      <Box
-        bg="white"
-        p={10}
-        borderRadius="md"
-        boxShadow="2xl"
-        w={{ base: "90%", md: "400px" }}
-      >
+      <Box bg="white" p={10} borderRadius="md" boxShadow="2xl" w={{ base: "90%", md: "400px" }}>
         <Heading textAlign="center" mb={6} color="blue.600">
           Confirme seu Cadastro
         </Heading>
@@ -106,13 +111,12 @@ const ConfirmarCodigo = () => {
             fontSize="xl"
           />
 
-          <Button
-            colorScheme="blue"
-            w="full"
-            onClick={handleConfirmar}
-            isLoading={loading}
-          >
+          <Button colorScheme="blue" w="full" onClick={handleConfirmar} isLoading={loading}>
             Confirmar Código
+          </Button>
+
+          <Button colorScheme="teal" w="full" onClick={handleColarCodigo}>
+            Colar Código
           </Button>
 
           <Button

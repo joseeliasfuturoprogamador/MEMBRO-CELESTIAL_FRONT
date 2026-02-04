@@ -19,9 +19,12 @@ import { useDisclosure } from "@chakra-ui/react";
 import Sidebar from "./componentes/Sidebar";
 import CadastroIgreja from "./pages/AuthIgreja";
 import ConfirmarCodigo from "./pages/VerificarToken";
+import RecuperarSenha from "./pages/RecuperarSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 import Dizimos from "./componentes/Dizimos";
+import Avisos from "./componentes/Avisos";
 
 // 🔧 URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
@@ -35,6 +38,7 @@ const App = () => {
   const [idIgreja, setIdIgreja] = useState(() => sessionStorage.getItem("idIgreja") || "");
   const toast = useToast();
 
+  // Função para carregar membros
   const loadUsers = useCallback(async () => {
     if (!idIgreja) {
       setData([]);
@@ -68,7 +72,7 @@ const App = () => {
     }
   }, [idIgreja, toast]);
 
-  // Atualiza idIgreja ao focar na aba
+  // Atualiza idIgreja ao focar na aba (para refletir login/confirmacao)
   useEffect(() => {
     const atualizarIdIgreja = () => {
       const novoId = sessionStorage.getItem("idIgreja") || "";
@@ -85,10 +89,22 @@ const App = () => {
 
   return (
     <Routes>
+      {/* Redirecionamento padrão */}
       <Route path="/" element={<Navigate to="/cadastro-igreja" />} />
+
+      {/* Cadastro/Login */}
       <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
+
+      {/* Confirmação de código */}
       <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
 
+      {/* Recuperar senha */}
+      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+
+      {/* Redefinir senha */}
+      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+
+      {/* Dashboard de membros */}
       <Route
         path="/dashboard"
         element={
@@ -139,7 +155,13 @@ const App = () => {
                               <Text fontSize="sm" mr={2} fontWeight="bold">
                                 {statusMembros[_id] ? "Ativo" : "Inativo"}
                               </Text>
-                              <Button size="sm" colorScheme="green" onClick={() => setStatusMembros((prev) => ({ ...prev, [_id]: !prev[_id] }))}>
+                              <Button
+                                size="sm"
+                                colorScheme="green"
+                                onClick={() =>
+                                  setStatusMembros((prev) => ({ ...prev, [_id]: !prev[_id] }))
+                                }
+                              >
                                 Alternar
                               </Button>
                             </Flex>
@@ -186,6 +208,11 @@ const App = () => {
                   </Grid>
                 </Box>
 
+                {/* Componente Avisos */}
+                <Box w="80%" my={6}>
+                  <Avisos />
+                </Box>
+
                 <ModalComp
                   isOpen={isOpen}
                   onClose={onClose}
@@ -203,6 +230,7 @@ const App = () => {
         }
       />
 
+      {/* Página de dízimos */}
       <Route
         path="/dizimos"
         element={

@@ -52,29 +52,35 @@ const CadastroLogin = () => {
       } else {
         // LOGIN
         const response = await axios.post(`${API_URL}/api/login`, {
-          email: formData.email,
+          nome: formData.email, // Backend aceita nome ou email
           senha: formData.senha,
         });
 
-        const { idIgreja, confirmado } = response.data;
+        const { idIgreja } = response.data;
 
-        if (!confirmado) {
-          sessionStorage.setItem("igrejaEmail", formData.email);
-          sessionStorage.setItem("idIgrejaTemp", idIgreja);
-
+        if (!idIgreja) {
           toast({
-            title: "Confirmação pendente",
-            description: "Verifique seu email e insira o código para confirmar.",
+            title: "Login não permitido",
+            description: "Sua igreja ainda não foi confirmada.",
             status: "warning",
             duration: 5000,
             isClosable: true,
           });
-
-          navigate("/confirmar-codigo");
-        } else {
-          sessionStorage.setItem("idIgreja", idIgreja);
-          navigate("/dashboard");
+          return;
         }
+
+        // Salva idIgreja definitivo no sessionStorage
+        sessionStorage.setItem("idIgreja", idIgreja);
+
+        toast({
+          title: "Login realizado!",
+          description: "Redirecionando para o dashboard...",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        navigate("/dashboard");
       }
     } catch (error) {
       toast({
@@ -171,7 +177,7 @@ const CadastroLogin = () => {
 
           {!modoCadastro && (
             <Text mt={2} textAlign="center" color="blue.500">
-              <Link onClick={() => navigate("/esqueci-senha")}>
+              <Link onClick={() => navigate("/recuperar-senha")}>
                 Esqueceu a senha?
               </Link>
             </Text>

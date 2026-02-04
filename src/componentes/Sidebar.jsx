@@ -9,11 +9,12 @@ import {
   Drawer,
   DrawerOverlay,
   DrawerContent,
-  DrawerBody
+  DrawerBody,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
-import { MdCalendarToday } from "react-icons/md";
-import { FaDollarSign } from "react-icons/fa";
+import { MdCalendarToday, MdDashboard } from "react-icons/md";
+import { FaDollarSign, FaUsers } from "react-icons/fa";
+import { GiWaterDrop } from "react-icons/gi"; // Batismo
 import { useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
@@ -24,18 +25,32 @@ const Sidebar = () => {
 
   const handleNavigation = (path) => {
     navigate(path);
-    toggleSidebar();
+    setIsOpen(false);
   };
+
+  const MenuItem = ({ icon, label, path }) => (
+    <Link
+      display="flex"
+      alignItems="center"
+      gap={3}
+      p={3}
+      borderRadius="md"
+      cursor="pointer"
+      _hover={{ bg: "blue.600" }}
+      onClick={() => handleNavigation(path)}
+    >
+      {icon}
+      <Text fontSize="sm">{label}</Text>
+    </Link>
+  );
 
   return (
     <>
-      {/* Botão de menu para telas pequenas */}
+      {/* Botão mobile */}
       <IconButton
         aria-label="Abrir menu"
         icon={<HamburgerIcon />}
-        colorScheme="black"
         variant="outline"
-        size="lg"
         display={{ base: "block", md: "none" }}
         position="fixed"
         top={4}
@@ -44,102 +59,90 @@ const Sidebar = () => {
         onClick={toggleSidebar}
       />
 
-      {/* Sidebar padrão (desktop) */}
+      {/* Sidebar Desktop */}
       <Box
         w="200px"
         bg="blue.500"
         color="white"
         minH="100vh"
         p={5}
-        boxShadow="md"
         position="fixed"
+        left={0}
+        top={0}
         display={{ base: "none", md: "block" }}
+        boxShadow="lg"
       >
         <VStack spacing={8} align="stretch">
-          <Text fontSize="2xl" fontWeight="bold" textAlign="center">
+          <Text fontSize="xl" fontWeight="bold" textAlign="center">
             Dashboard
           </Text>
-          <Stack spacing={4}>
-            <Link
-              display="flex"
-              alignItems="center"
-              _hover={{ bg: "blue.900" }}
-              p={2}
-              borderRadius="md"
-              onClick={() => handleNavigation("/membros")}
-            >
-              <HamburgerIcon boxSize={5} mr={3} />
-              <Text>Membros</Text>
-            </Link>
-            <Link
-              display="flex"
-              alignItems="center"
-              _hover={{ bg: "blue.900" }}
-              p={2}
-              borderRadius="md"
-              onClick={() => handleNavigation("/dizimos")}
-            >
-              <FaDollarSign size={20} style={{ marginRight: "10px" }} />
-              <Text>Dízimos</Text>
-            </Link>
-            <Link
-              display="flex"
-              alignItems="center"
-              _hover={{ bg: "blue.900" }}
-              p={2}
-              borderRadius="md"
-              onClick={() => handleNavigation("/eventos")}
-            >
-              <MdCalendarToday size={20} style={{ marginRight: "10px" }} />
-              <Text>Eventos</Text>
-            </Link>
+
+          <Stack spacing={1}>
+            <MenuItem
+              icon={<MdDashboard size={20} />}
+              label="Início"
+              path="/"
+            />
+            <MenuItem
+              icon={<FaUsers size={18} />}
+              label="Membros"
+              path="/membros"
+            />
+            <MenuItem
+              icon={<FaDollarSign size={18} />}
+              label="Dízimos"
+              path="/dizimos"
+            />
+            <MenuItem
+              icon={<MdCalendarToday size={18} />}
+              label="Eventos"
+              path="/eventos"
+            />
+            <MenuItem
+              icon={<GiWaterDrop size={18} />}
+              label="Batismo"
+              path="/batismo"
+            />
           </Stack>
         </VStack>
       </Box>
 
-      {/* Sidebar móvel */}
+      {/* Sidebar Mobile */}
       <Drawer placement="left" onClose={toggleSidebar} isOpen={isOpen}>
         <DrawerOverlay />
         <DrawerContent>
           <DrawerBody bg="blue.500" color="white" p={5}>
-            <VStack spacing={8} align="stretch">
-              <Text fontSize="2xl" fontWeight="bold" textAlign="center">
+            <VStack spacing={6} align="stretch">
+              <Text fontSize="xl" fontWeight="bold" textAlign="center">
                 Dashboard
               </Text>
-              <Stack spacing={4}>
-                <Link
-                  display="flex"
-                  alignItems="center"
-                  _hover={{ bg: "blue.900" }}
-                  p={2}
-                  borderRadius="md"
-                  onClick={() => handleNavigation("/membros")}
-                >
-                  <HamburgerIcon boxSize={5} mr={3} />
-                  <Text>Membros</Text>
-                </Link>
-                <Link
-                  display="flex"
-                  alignItems="center"
-                  _hover={{ bg: "blue.900" }}
-                  p={2}
-                  borderRadius="md"
-                  onClick={() => handleNavigation("/dizimos")}
-                >
-                  <FaDollarSign size={20} style={{ marginRight: "10px" }} />
-                  <Text>Dízimos</Text>
-                </Link>
-                <Link
-                  display="flex"
-                  alignItems="center"
-                  _hover={{ bg: "blue.900" }}
-                  p={2}
-                  borderRadius="md"
-                  onClick={() => handleNavigation("/eventos")}
-                >
-                  <MdCalendarToday size={20} style={{ marginRight: "10px" }} />
-                  <Text>Eventos</Text>
-                </Link>
+
+              <Stack spacing={1}>
+                <MenuItem
+                  icon={<MdDashboard size={20} />}
+                  label="Início"
+                  path="/"
+                />
+                <MenuItem
+                  icon={<FaUsers size={18} />}
+                  label="Membros"
+                  path="/membros"
+                />
+                <MenuItem
+                  icon={<FaDollarSign size={18} />}
+                  label="Dízimos"
+                  path="/dizimos"
+                />
+                <MenuItem
+                  icon={<MdCalendarToday size={18} />}
+                  label="Eventos"
+                  path="/eventos"
+                />
+                <MenuItem
+                  icon={<GiWaterDrop size={18} />}
+                  label="Batismo"
+                  path="/batismo"
+                />
               </Stack>
             </VStack>
           </DrawerBody>
