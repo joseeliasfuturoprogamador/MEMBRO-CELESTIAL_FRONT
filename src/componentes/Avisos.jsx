@@ -1,3 +1,4 @@
+// src/componentes/Avisos.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -22,7 +23,7 @@ import {
 } from "@chakra-ui/react";
 import { AddIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const Avisos = () => {
   const [avisos, setAvisos] = useState([]);
@@ -30,16 +31,22 @@ const Avisos = () => {
   const [titulo, setTitulo] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [avisoEdit, setAvisoEdit] = useState(null);
+
   const toast = useToast();
   const idIgreja = sessionStorage.getItem("idIgreja");
 
+  // 🔹 Carregar avisos
   const loadAvisos = async () => {
     try {
-      const res = await axios.get(`${API_URL}/avisos`, {
+      if (!idIgreja) return;
+
+      const res = await axios.get(`${API_URL}/api/avisos`, {
         headers: { "X-Igreja-Id": idIgreja },
       });
-      setAvisos(res.data);
-    } catch {
+
+      setAvisos(res.data || []);
+    } catch (error) {
+      console.error(error);
       toast({
         title: "Erro ao carregar avisos",
         status: "error",
@@ -50,9 +57,10 @@ const Avisos = () => {
   };
 
   useEffect(() => {
-    if (idIgreja) loadAvisos();
+    loadAvisos();
   }, [idIgreja]);
 
+  // 🔹 Abrir modal
   const openModal = (aviso = null) => {
     if (aviso) {
       setAvisoEdit(aviso);
@@ -68,41 +76,69 @@ const Avisos = () => {
 
   const closeModal = () => setModalOpen(false);
 
+  // 🔹 Validar campos
+  const validarCampos = () => {
+    if (!titulo.trim()) {
+      toast({ title: "O título é obrigatório", status: "warning", duration: 3000 });
+      return false;
+    }
+    if (!mensagem.trim()) {
+      toast({ title: "A mensagem é obrigatória", status: "warning", duration: 3000 });
+      return false;
+    }
+    return true;
+  };
+
+  // 🔹 Salvar aviso
   const salvarAviso = async () => {
+    if (!validarCampos()) return;
+
     try {
+      if (!idIgreja) return;
+
+      const payload = {
+        titulo: titulo.trim(),
+        mensagem: mensagem.trim(),
+        dataEvento: null,      // garante que o campo exista
+        destinatarioId: null,  // garante que o campo exista
+      };
+
       if (avisoEdit) {
-        await axios.put(
-          `${API_URL}/avisos/${avisoEdit._id}`,
-          { titulo, mensagem },
-          { headers: { "X-Igreja-Id": idIgreja } }
-        );
-        toast({ title: "Aviso atualizado!", status: "success" });
+        // atualizar
+        await axios.put(`${API_URL}/api/avisos/${avisoEdit._id}`, payload, {
+          headers: { "X-Igreja-Id": idIgreja },
+        });
+        toast({ title: "Aviso atualizado!", status: "success", duration: 3000 });
       } else {
-        await axios.post(
-          `${API_URL}/avisos`,
-          { titulo, mensagem },
-          { headers: { "X-Igreja-Id": idIgreja } }
-        );
-        toast({ title: "Aviso criado!", status: "success" });
+        // criar
+        await axios.post(`${API_URL}/api/avisos`, payload, {
+          headers: { "X-Igreja-Id": idIgreja },
+        });
+        toast({ title: "Aviso criado!", status: "success", duration: 3000 });
       }
 
       closeModal();
       loadAvisos();
-    } catch {
-      toast({ title: "Erro ao salvar aviso", status: "error" });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Erro ao salvar aviso", status: "error", duration: 4000 });
     }
   };
 
+  // 🔹 Deletar aviso
   const deletarAviso = async (id) => {
     if (!window.confirm("Deseja realmente excluir este aviso?")) return;
+
     try {
-      await axios.delete(`${API_URL}/avisos/${id}`, {
+      await axios.delete(`${API_URL}/api/avisos/${id}`, {
         headers: { "X-Igreja-Id": idIgreja },
       });
-      toast({ title: "Aviso excluído!", status: "success" });
+
+      toast({ title: "Aviso excluído!", status: "success", duration: 3000 });
       loadAvisos();
-    } catch {
-      toast({ title: "Erro ao excluir aviso", status: "error" });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Erro ao excluir aviso", status: "error", duration: 4000 });
     }
   };
 
@@ -112,11 +148,8 @@ const Avisos = () => {
         <Heading size="lg" color="blue.700">
           Avisos
         </Heading>
-        <Button
-          leftIcon={<AddIcon />}
-          colorScheme="blue"
-          onClick={() => openModal()}
-        >
+
+        <Button leftIcon={<AddIcon />} colorScheme="blue" onClick={() => openModal()}>
           Novo Aviso
         </Button>
       </Flex>
@@ -171,13 +204,11 @@ const Avisos = () => {
         ))}
       </Grid>
 
-      {/* Modal Criar / Editar */}
+      {/* Modal */}
       <Modal isOpen={modalOpen} onClose={closeModal} isCentered>
         <ModalOverlay />
         <ModalContent borderRadius="lg">
-          <ModalHeader>
-            {avisoEdit ? "Editar Aviso" : "Novo Aviso"}
-          </ModalHeader>
+          <ModalHeader>{avisoEdit ? "Editar Aviso" : "Novo Aviso"}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Stack spacing={4}>
@@ -186,6 +217,7 @@ const Avisos = () => {
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
               />
+
               <Textarea
                 placeholder="Mensagem do aviso"
                 value={mensagem}
@@ -194,12 +226,9 @@ const Avisos = () => {
               />
             </Stack>
           </ModalBody>
+
           <ModalFooter>
-            <Button
-              colorScheme="blue"
-              mr={3}
-              onClick={salvarAviso}
-            >
+            <Button colorScheme="blue" mr={3} onClick={salvarAviso}>
               {avisoEdit ? "Salvar Alterações" : "Criar Aviso"}
             </Button>
             <Button variant="ghost" onClick={closeModal}>

@@ -25,6 +25,7 @@ import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
 import Dizimos from "./componentes/Dizimos";
 import Avisos from "./componentes/Avisos";
+import Batizados from "./componentes/Batizados";
 
 // 🔧 URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
@@ -35,10 +36,12 @@ const App = () => {
   const [dataEdit, setDataEdit] = useState({});
   const [search, setSearch] = useState("");
   const [statusMembros, setStatusMembros] = useState({});
-  const [idIgreja, setIdIgreja] = useState(() => sessionStorage.getItem("idIgreja") || "");
+  const [idIgreja, setIdIgreja] = useState(
+    () => sessionStorage.getItem("idIgreja") || ""
+  );
   const toast = useToast();
 
-  // Função para carregar membros
+  // 🔹 Carregar membros
   const loadUsers = useCallback(async () => {
     if (!idIgreja) {
       setData([]);
@@ -53,17 +56,22 @@ const App = () => {
 
       setData(response.data || []);
 
-      const statusInicial = response.data?.reduce((acc, user) => {
-        acc[user._id] = true;
-        return acc;
-      }, {}) || {};
-      setStatusMembros(statusInicial);
+      const statusInicial =
+        response.data?.reduce((acc, user) => {
+          acc[user._id] = true;
+          return acc;
+        }, {}) || {};
 
+      setStatusMembros(statusInicial);
     } catch (error) {
-      console.error("Erro ao carregar usuários:", error.response?.data || error.message);
+      console.error(
+        "Erro ao carregar usuários:",
+        error.response?.data || error.message
+      );
       toast({
         title: "Erro ao carregar usuários",
-        description: error.response?.data?.message || "Verifique o servidor",
+        description:
+          error.response?.data?.message || "Verifique o servidor",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -72,7 +80,7 @@ const App = () => {
     }
   }, [idIgreja, toast]);
 
-  // Atualiza idIgreja ao focar na aba (para refletir login/confirmacao)
+  // 🔹 Atualiza idIgreja ao focar na aba
   useEffect(() => {
     const atualizarIdIgreja = () => {
       const novoId = sessionStorage.getItem("idIgreja") || "";
@@ -82,52 +90,73 @@ const App = () => {
     return () => window.removeEventListener("focus", atualizarIdIgreja);
   }, [idIgreja]);
 
-  // Carrega usuários quando idIgreja muda
+  // 🔹 Recarrega membros quando muda igreja
   useEffect(() => {
     if (idIgreja) loadUsers();
   }, [idIgreja, loadUsers]);
 
   return (
     <Routes>
-      {/* Redirecionamento padrão */}
-      <Route path="/" element={<Navigate to="/cadastro-igreja" />} />
-
-      {/* Cadastro/Login */}
-      <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
-
-      {/* Confirmação de código */}
-      <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
-
-      {/* Recuperar senha */}
-      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-
-      {/* Redefinir senha */}
-      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-
-      {/* Dashboard de membros */}
+      {/* 🔥 Redirecionamento inteligente */}
       <Route
-        path="/dashboard"
+        path="/"
         element={
           idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-              <Flex flex="1" direction="column" align="center" bg="gray.100">
-                <Box bg="blue.500" w="100%" py={4} textAlign="center">
-                  <Heading color="white">MEMBRO CELESTIAL</Heading>
-                </Box>
+            <Navigate to="/dashboard" />
+          ) : (
+            <Navigate to="/cadastro-igreja" />
+          )
+        }
+      />
 
-                <Box w="80%" my={6} p={4} bg="white" borderRadius="md" boxShadow="lg">
-                  <Flex justify="space-between" mb={4}>
-                    <Button
-                      leftIcon={<AddIcon />}
-                      colorScheme="blue"
-                      onClick={() => {
-                        setDataEdit({});
-                        onOpen();
-                      }}
+      {/* 🔐 Auth */}
+      <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
+      <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
+      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+
+      {/* 🧑‍🤝‍🧑 Dashboard */}
+<Route
+  path="/dashboard"
+  element={
+    idIgreja ? (
+      <Flex minH="100vh">
+        <Sidebar />
+
+        <Flex flex="1" direction="column" align="center" bg="gray.100">
+          {/* Frase inspiradora acima do título */}
+          <Box w="100%" py={2} textAlign="center" bg="gray.200">
+            <Text fontSize="sm" color="gray.700" fontWeight="bold" fontStyle="italic">
+              Mateus 11:28 – “Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei.”
+            </Text>
+          </Box>
+
+          {/* Título principal */}
+          <Box bg="blue.500" w="100%" py={4} textAlign="center">
+            <Heading color="white">MEMBRO CELESTIAL</Heading>
+          </Box>
+
+          {/* Conteúdo do dashboard */}
+          <Box
+            w="80%"
+            my={6}
+            p={4}
+            bg="white"
+            borderRadius="md"
+            boxShadow="lg"
+          >
+            <Flex justify="space-between" mb={4}>
+              <Button
+                leftIcon={<AddIcon />}
+                colorScheme="blue"
+                onClick={() => {
+                  setDataEdit({});
+                  onOpen();
+                }}
                     >
                       Criar novo Membro
                     </Button>
+
                     <InputGroup width="300px">
                       <InputLeftElement pointerEvents="none">
                         <SearchIcon color="black" />
@@ -145,12 +174,23 @@ const App = () => {
                       .filter(
                         (user) =>
                           typeof user.nome === "string" &&
-                          user.nome.toLowerCase().includes(search.toLowerCase())
+                          user.nome
+                            .toLowerCase()
+                            .includes(search.toLowerCase())
                       )
                       .map(({ _id, nome }) => (
-                        <Box key={_id} p={4} borderWidth="1px" borderRadius="lg" boxShadow="sm">
+                        <Box
+                          key={_id}
+                          p={4}
+                          borderWidth="1px"
+                          borderRadius="lg"
+                          boxShadow="sm"
+                        >
                           <Flex justify="space-between" align="center">
-                            <Text fontWeight="bold" fontSize="lg">{nome}</Text>
+                            <Text fontWeight="bold" fontSize="lg">
+                              {nome}
+                            </Text>
+
                             <Flex align="center">
                               <Text fontSize="sm" mr={2} fontWeight="bold">
                                 {statusMembros[_id] ? "Ativo" : "Inativo"}
@@ -159,7 +199,10 @@ const App = () => {
                                 size="sm"
                                 colorScheme="green"
                                 onClick={() =>
-                                  setStatusMembros((prev) => ({ ...prev, [_id]: !prev[_id] }))
+                                  setStatusMembros((prev) => ({
+                                    ...prev,
+                                    [_id]: !prev[_id],
+                                  }))
                                 }
                               >
                                 Alternar
@@ -173,25 +216,41 @@ const App = () => {
                               leftIcon={<EditIcon />}
                               colorScheme="yellow"
                               onClick={() => {
-                                setDataEdit(data.find((user) => user._id === _id));
+                                setDataEdit(
+                                  data.find((user) => user._id === _id)
+                                );
                                 onOpen();
                               }}
                             >
                               Editar
                             </Button>
+
                             <Button
                               size="sm"
                               leftIcon={<DeleteIcon />}
                               colorScheme="red"
                               onClick={async () => {
-                                if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
+                                if (
+                                  window.confirm(
+                                    "Tem certeza que deseja excluir este usuário?"
+                                  )
+                                ) {
                                   try {
-                                    await axios.delete(`${API_URL}/api/users/${_id}`, { headers: { "X-Igreja-Id": idIgreja } });
+                                    await axios.delete(
+                                      `${API_URL}/api/users/${_id}`,
+                                      {
+                                        headers: {
+                                          "X-Igreja-Id": idIgreja,
+                                        },
+                                      }
+                                    );
                                     loadUsers();
                                   } catch (error) {
                                     toast({
                                       title: "Erro ao deletar usuário",
-                                      description: error.response?.data?.message || "Verifique o servidor",
+                                      description:
+                                        error.response?.data?.message ||
+                                        "Verifique o servidor",
                                       status: "error",
                                       duration: 4000,
                                       isClosable: true,
@@ -208,7 +267,7 @@ const App = () => {
                   </Grid>
                 </Box>
 
-                {/* Componente Avisos */}
+                {/* Avisos */}
                 <Box w="80%" my={6}>
                   <Avisos />
                 </Box>
@@ -221,6 +280,7 @@ const App = () => {
                   setData={setData}
                   data={data}
                 />
+
                 <SupportButton />
               </Flex>
             </Flex>
@@ -230,7 +290,7 @@ const App = () => {
         }
       />
 
-      {/* Página de dízimos */}
+      {/* 💰 Dízimos */}
       <Route
         path="/dizimos"
         element={
@@ -239,6 +299,23 @@ const App = () => {
               <Sidebar />
               <Flex flex="1" direction="column" align="center" bg="gray.100">
                 <Dizimos />
+              </Flex>
+            </Flex>
+          ) : (
+            <Navigate to="/cadastro-igreja" />
+          )
+        }
+      />
+
+      {/* 💧 Batismos */}
+      <Route
+        path="/batismo"
+        element={
+          idIgreja ? (
+            <Flex minH="100vh">
+              <Sidebar />
+              <Flex flex="1" direction="column" align="center" bg="gray.100">
+                <Batizados />
               </Flex>
             </Flex>
           ) : (

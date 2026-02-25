@@ -39,11 +39,10 @@ const fieldPlaceholders = {
   batismo: "Selecione a data do batismo",
 };
 
-// ✅ Usando variável de ambiente Vite
 const API_URL = import.meta.env.VITE_API_URL;
 
 const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers }) => {
-  const [form, setForm] = useState(() =>
+  const [form, setForm] = useState(
     Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
   );
 
@@ -63,19 +62,14 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers })
           )
         );
       } else {
-        setForm(
-          Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""]))
-        );
+        setForm(Object.fromEntries(Object.keys(fieldPlaceholders).map((field) => [field, ""])));
       }
     }
   }, [dataEdit, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
@@ -95,44 +89,21 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers })
     const batismoDate = new Date(form.batismo);
     const conversaoDate = form.conversao ? new Date(form.conversao) : null;
 
-    const dataNascimento = nascimentoDate.toISOString().split("T")[0];
-    const dataBatismo = batismoDate.toISOString().split("T")[0];
-    const dataConversao = conversaoDate ? conversaoDate.toISOString().split("T")[0] : null;
-
-    const igrejaId = sessionStorage.getItem("idIgreja");
-    if (!igrejaId) {
-      toast({
-        title: "Erro ao identificar a igreja.",
-        description: "ID da igreja não encontrado na sessão.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "top",
-      });
-      return;
-    }
-
     const formData = {
       ...form,
-      nascimento: dataNascimento,
-      batismo: dataBatismo,
-      conversao: dataConversao,
-      igreja: igrejaId,
+      nascimento: nascimentoDate.toISOString().split("T")[0],
+      batismo: batismoDate.toISOString().split("T")[0],
+      conversao: conversaoDate ? conversaoDate.toISOString().split("T")[0] : null,
+      igreja: sessionStorage.getItem("idIgreja"),
     };
 
     try {
       const isEdit = dataEdit && dataEdit._id;
-      const url = isEdit
-        ? `${API_URL}/api/users/${dataEdit._id}`
-        : `${API_URL}/api/users`;
-
+      const url = isEdit ? `${API_URL}/api/users/${dataEdit._id}` : `${API_URL}/api/users`;
       const method = isEdit ? axios.put : axios.post;
 
       const response = await method(url, formData, {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Igreja-Id": igrejaId,
-        },
+        headers: { "Content-Type": "application/json", "X-Igreja-Id": formData.igreja },
       });
 
       if (response.status === 200 || response.status === 201) {
@@ -148,17 +119,12 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers })
         });
 
         if (isEdit) {
-          setData((prev) =>
-            prev.map((m) => (m._id === dataEdit._id ? response.data : m))
-          );
+          setData((prev) => prev.map((m) => (m._id === dataEdit._id ? response.data : m)));
         } else {
           setData((prev) => [...prev, response.data]);
         }
 
-        if (typeof loadUsers === "function") {
-          await loadUsers();
-        }
-
+        if (typeof loadUsers === "function") await loadUsers();
         onClose();
       } else {
         toast({
@@ -184,82 +150,89 @@ const ModalComp = ({ isOpen, onClose, dataEdit = {}, data, setData, loadUsers })
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" closeOnOverlayClick={false}>
-      <ModalOverlay />
-      <ModalContent borderRadius="lg" borderWidth="1px" boxShadow="xl">
-        <ModalHeader bg="blue.600" color="white" textAlign="center">
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl" closeOnOverlayClick={false}>
+      <ModalOverlay bg="blackAlpha.600" />
+      <ModalContent borderRadius="xl" border="1px solid #CBD5E0" boxShadow="2xl" overflow="hidden">
+        <ModalHeader
+          bgGradient="linear(to-r, blue.600, blue.400)"
+          color="white"
+          textAlign="center"
+          fontSize="xl"
+          fontWeight="bold"
+          py={4}
+        >
           {dataEdit._id ? "Editar Membro" : "Novo Cadastro de Membro"}
         </ModalHeader>
-        <ModalCloseButton color="white" />
-        <ModalBody p={6} bg="gray.50">
-          <Box>
-            <Grid
-              templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
-              gap={6}
-              justifyItems="start"
-              alignItems="start"
-            >
-              {Object.keys(form).map((field) => (
-                <GridItem key={field}>
-                  <FormControl>
-                    <FormLabel fontWeight="bold" fontSize="sm" color="gray.600">
-                      {field.charAt(0).toUpperCase() + field.slice(1)}
-                    </FormLabel>
-                    {["nascimento", "batismo", "conversao"].includes(field) ? (
-                      <Input
-                        name={field}
-                        type="date"
-                        value={form[field]}
-                        onChange={handleChange}
-                        placeholder={fieldPlaceholders[field]}
-                        size="lg"
-                        borderRadius="md"
-                        borderColor="gray.300"
-                        _hover={{ borderColor: "gray.400" }}
-                        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
-                      />
-                    ) : ["estadocivil", "discipulado"].includes(field) ? (
-                      <Select
-                        name={field}
-                        value={form[field]}
-                        onChange={handleChange}
-                        placeholder={fieldPlaceholders[field]}
-                        size="lg"
-                        borderRadius="md"
-                        borderColor="gray.300"
-                        _hover={{ borderColor: "gray.400" }}
-                        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
-                      >
-                        {(field === "estadocivil"
-                          ? ["Solteiro(a)", "Casado(a)", "Viúvo", "Divorciado"]
-                          : ["Sim Fiz", "Não Fiz"]
-                        ).map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </Select>
-                    ) : (
-                      <Input
-                        name={field}
-                        value={form[field]}
-                        onChange={handleChange}
-                        placeholder={fieldPlaceholders[field]}
-                        size="lg"
-                        borderRadius="md"
-                        borderColor="gray.300"
-                        _hover={{ borderColor: "gray.400" }}
-                        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
-                      />
-                    )}
-                  </FormControl>
-                </GridItem>
-              ))}
-            </Grid>
-          </Box>
+        <ModalCloseButton color="white" _hover={{ bg: "red.500" }} />
+
+        <ModalBody bg="gray.50" p={6}>
+          <Grid
+            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+            gap={6}
+            justifyItems="start"
+            alignItems="start"
+          >
+            {Object.keys(form).map((field) => (
+              <GridItem key={field}>
+                <FormControl>
+                  <FormLabel fontWeight="bold" fontSize="sm" color="gray.700">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </FormLabel>
+                  {["nascimento", "batismo", "conversao"].includes(field) ? (
+                    <Input
+                      name={field}
+                      type="date"
+                      value={form[field]}
+                      onChange={handleChange}
+                      placeholder={fieldPlaceholders[field]}
+                      size="md"
+                      borderRadius="lg"
+                      borderColor="gray.300"
+                      _hover={{ borderColor: "blue.400" }}
+                      _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182CE" }}
+                    />
+                  ) : ["estadocivil", "discipulado"].includes(field) ? (
+                    <Select
+                      name={field}
+                      value={form[field]}
+                      onChange={handleChange}
+                      placeholder={fieldPlaceholders[field]}
+                      size="md"
+                      borderRadius="lg"
+                      borderColor="gray.300"
+                      _hover={{ borderColor: "blue.400" }}
+                      _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182CE" }}
+                    >
+                      {(field === "estadocivil"
+                        ? ["Solteiro(a)", "Casado(a)", "Viúvo(a)", "Divorciado(a)"]
+                        : ["Sim Fiz", "Não Fiz"]
+                      ).map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Input
+                      name={field}
+                      value={form[field]}
+                      onChange={handleChange}
+                      placeholder={fieldPlaceholders[field]}
+                      size="md"
+                      borderRadius="lg"
+                      borderColor="gray.300"
+                      _hover={{ borderColor: "blue.400" }}
+                      _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182CE" }}
+                    />
+                  )}
+                </FormControl>
+              </GridItem>
+            ))}
+          </Grid>
         </ModalBody>
-        <ModalFooter bg="gray.100">
-          <HStack spacing={4} w="100%" justify="space-between">
+
+        <ModalFooter bg="gray.100" py={4}>
+          <HStack spacing={4} w="100%" justify="flex-end">
             <IconButton
               icon={<FaSave />}
               aria-label="Salvar"

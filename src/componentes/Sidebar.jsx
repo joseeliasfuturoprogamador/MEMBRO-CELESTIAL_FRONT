@@ -10,6 +10,7 @@ import {
   DrawerOverlay,
   DrawerContent,
   DrawerBody,
+  Divider,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { MdCalendarToday, MdDashboard } from "react-icons/md";
@@ -44,6 +45,23 @@ const Sidebar = () => {
     </Link>
   );
 
+  const renderFooter = () => (
+  <Box textAlign="center" py={4} mt="auto">
+    <Divider borderColor="blue.300" mb={2} />
+    <Text
+      fontSize="sm"
+      color="whiteAlpha.900"
+      fontStyle="italic"
+      letterSpacing="wide"
+      _hover={{ color: "white", transition: "0.3s" }}
+    >
+      Desenvolvido por <strong>José Elias Silva Sousa Morais</strong>
+    </Text>
+    <Text fontSize="xs" color="whiteAlpha.800" mt={1}>
+      Todos os direitos reservados © 2026
+    </Text>
+  </Box>
+);
   return (
     <>
       {/* Botão mobile */}
@@ -69,41 +87,24 @@ const Sidebar = () => {
         position="fixed"
         left={0}
         top={0}
-        display={{ base: "none", md: "block" }}
+        display={{ base: "none", md: "flex" }}
+        flexDirection="column"
         boxShadow="lg"
       >
-        <VStack spacing={8} align="stretch">
+        <VStack spacing={8} align="stretch" flex="1">
           <Text fontSize="xl" fontWeight="bold" textAlign="center">
             Dashboard
           </Text>
 
-          <Stack spacing={1}>
-            <MenuItem
-              icon={<MdDashboard size={20} />}
-              label="Início"
-              path="/"
-            />
-            <MenuItem
-              icon={<FaUsers size={18} />}
-              label="Membros"
-              path="/membros"
-            />
-            <MenuItem
-              icon={<FaDollarSign size={18} />}
-              label="Dízimos"
-              path="/dizimos"
-            />
-            <MenuItem
-              icon={<MdCalendarToday size={18} />}
-              label="Eventos"
-              path="/eventos"
-            />
-            <MenuItem
-              icon={<GiWaterDrop size={18} />}
-              label="Batismo"
-              path="/batismo"
-            />
+          <Stack spacing={1} flex="1">
+            <MenuItem icon={<MdDashboard size={20} />} label="Início" path="/" />
+            <MenuItem icon={<FaUsers size={18} />} label="Membros" path="/membros" />
+            <MenuItem icon={<FaDollarSign size={18} />} label="Dízimos" path="/dizimos" />
+            <MenuItem icon={<MdCalendarToday size={18} />} label="Eventos" path="/eventos" />
+            <MenuItem icon={<GiWaterDrop size={18} />} label="Batismo" path="/batismo" />
           </Stack>
+
+          <Box mt="auto">{renderFooter()}</Box>
         </VStack>
       </Box>
 
@@ -111,39 +112,28 @@ const Sidebar = () => {
       <Drawer placement="left" onClose={toggleSidebar} isOpen={isOpen}>
         <DrawerOverlay />
         <DrawerContent>
-          <DrawerBody bg="blue.500" color="white" p={5}>
-            <VStack spacing={6} align="stretch">
+          <DrawerBody
+            bg="blue.500"
+            color="white"
+            p={5}
+            display="flex"
+            flexDirection="column"
+            minH="100vh"
+          >
+            <VStack spacing={6} align="stretch" flex="1">
               <Text fontSize="xl" fontWeight="bold" textAlign="center">
                 Dashboard
               </Text>
 
-              <Stack spacing={1}>
-                <MenuItem
-                  icon={<MdDashboard size={20} />}
-                  label="Início"
-                  path="/"
-                />
-                <MenuItem
-                  icon={<FaUsers size={18} />}
-                  label="Membros"
-                  path="/membros"
-                />
-                <MenuItem
-                  icon={<FaDollarSign size={18} />}
-                  label="Dízimos"
-                  path="/dizimos"
-                />
-                <MenuItem
-                  icon={<MdCalendarToday size={18} />}
-                  label="Eventos"
-                  path="/eventos"
-                />
-                <MenuItem
-                  icon={<GiWaterDrop size={18} />}
-                  label="Batismo"
-                  path="/batismo"
-                />
+              <Stack spacing={1} flex="1">
+                <MenuItem icon={<MdDashboard size={20} />} label="Início" path="/" />
+                <MenuItem icon={<FaUsers size={18} />} label="Membros" path="/membros" />
+                <MenuItem icon={<FaDollarSign size={18} />} label="Dízimos" path="/dizimos" />
+                <MenuItem icon={<MdCalendarToday size={18} />} label="Eventos" path="/eventos" />
+                <MenuItem icon={<GiWaterDrop size={18} />} label="Batismo" path="/batismo" />
               </Stack>
+
+              <Box mt="auto">{renderFooter()}</Box>
             </VStack>
           </DrawerBody>
         </DrawerContent>
