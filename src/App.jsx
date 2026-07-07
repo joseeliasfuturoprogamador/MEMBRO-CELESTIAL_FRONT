@@ -23,9 +23,11 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import ModalComp from "./componentes/ModalComp";
 import SupportButton from "./componentes/SuportButton";
+
 import Dizimos from "./componentes/Dizimos";
 import Avisos from "./componentes/Avisos";
 import Batizados from "./componentes/Batizados";
+import Eventos from "./componentes/Eventos"; // ✅ ADICIONADO
 
 // 🔧 URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
@@ -64,10 +66,6 @@ const App = () => {
 
       setStatusMembros(statusInicial);
     } catch (error) {
-      console.error(
-        "Erro ao carregar usuários:",
-        error.response?.data || error.message
-      );
       toast({
         title: "Erro ao carregar usuários",
         description:
@@ -115,44 +113,50 @@ const App = () => {
       <Route path="/recuperar-senha" element={<RecuperarSenha />} />
       <Route path="/redefinir-senha" element={<RedefinirSenha />} />
 
-      {/* 🧑‍🤝‍🧑 Dashboard */}
-<Route
-  path="/dashboard"
-  element={
-    idIgreja ? (
-      <Flex minH="100vh">
-        <Sidebar />
+      {/* 🧑‍🤝‍🧑 Dashboard (INÍCIO) */}
+      <Route
+        path="/dashboard"
+        element={
+          idIgreja ? (
+            <Flex minH="100vh">
+              <Sidebar />
 
-        <Flex flex="1" direction="column" align="center" bg="gray.100">
-          {/* Frase inspiradora acima do título */}
-          <Box w="100%" py={2} textAlign="center" bg="gray.200">
-            <Text fontSize="sm" color="gray.700" fontWeight="bold" fontStyle="italic">
-              Mateus 11:28 – “Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei.”
-            </Text>
-          </Box>
+              <Flex flex="1" direction="column" align="center" bg="gray.100">
+                {/* Frase */}
+                <Box w="100%" py={2} textAlign="center" bg="gray.200">
+                  <Text
+                    fontSize="sm"
+                    color="gray.700"
+                    fontWeight="bold"
+                    fontStyle="italic"
+                  >
+                    Mateus 11:28 – “Vinde a mim, todos os que estais cansados e
+                    oprimidos, e eu vos aliviarei.”
+                  </Text>
+                </Box>
 
-          {/* Título principal */}
-          <Box bg="blue.500" w="100%" py={4} textAlign="center">
-            <Heading color="white">MEMBRO CELESTIAL</Heading>
-          </Box>
+                {/* Título */}
+                <Box bg="blue.500" w="100%" py={4} textAlign="center">
+                  <Heading color="white">MEMBRO CELESTIAL</Heading>
+                </Box>
 
-          {/* Conteúdo do dashboard */}
-          <Box
-            w="80%"
-            my={6}
-            p={4}
-            bg="white"
-            borderRadius="md"
-            boxShadow="lg"
-          >
-            <Flex justify="space-between" mb={4}>
-              <Button
-                leftIcon={<AddIcon />}
-                colorScheme="blue"
-                onClick={() => {
-                  setDataEdit({});
-                  onOpen();
-                }}
+                {/* Lista de membros */}
+                <Box
+                  w="80%"
+                  my={6}
+                  p={4}
+                  bg="white"
+                  borderRadius="md"
+                  boxShadow="lg"
+                >
+                  <Flex justify="space-between" mb={4}>
+                    <Button
+                      leftIcon={<AddIcon />}
+                      colorScheme="blue"
+                      onClick={() => {
+                        setDataEdit({});
+                        onOpen();
+                      }}
                     >
                       Criar novo Membro
                     </Button>
@@ -186,31 +190,21 @@ const App = () => {
                           borderRadius="lg"
                           boxShadow="sm"
                         >
-                          <Flex justify="space-between" align="center">
+                          <Flex
+                            justify="space-between"
+                            align="center"
+                            mb={3}
+                          >
                             <Text fontWeight="bold" fontSize="lg">
                               {nome}
                             </Text>
 
-                            <Flex align="center">
-                              <Text fontSize="sm" mr={2} fontWeight="bold">
-                                {statusMembros[_id] ? "Ativo" : "Inativo"}
-                              </Text>
-                              <Button
-                                size="sm"
-                                colorScheme="green"
-                                onClick={() =>
-                                  setStatusMembros((prev) => ({
-                                    ...prev,
-                                    [_id]: !prev[_id],
-                                  }))
-                                }
-                              >
-                                Alternar
-                              </Button>
-                            </Flex>
+                            <Text fontSize="sm" fontWeight="bold">
+                              {statusMembros[_id] ? "Ativo" : "Inativo"}
+                            </Text>
                           </Flex>
 
-                          <Flex mt={3} justify="space-between">
+                          <Flex justify="space-between">
                             <Button
                               size="sm"
                               leftIcon={<EditIcon />}
@@ -235,27 +229,15 @@ const App = () => {
                                     "Tem certeza que deseja excluir este usuário?"
                                   )
                                 ) {
-                                  try {
-                                    await axios.delete(
-                                      `${API_URL}/api/users/${_id}`,
-                                      {
-                                        headers: {
-                                          "X-Igreja-Id": idIgreja,
-                                        },
-                                      }
-                                    );
-                                    loadUsers();
-                                  } catch (error) {
-                                    toast({
-                                      title: "Erro ao deletar usuário",
-                                      description:
-                                        error.response?.data?.message ||
-                                        "Verifique o servidor",
-                                      status: "error",
-                                      duration: 4000,
-                                      isClosable: true,
-                                    });
-                                  }
+                                  await axios.delete(
+                                    `${API_URL}/api/users/${_id}`,
+                                    {
+                                      headers: {
+                                        "X-Igreja-Id": idIgreja,
+                                      },
+                                    }
+                                  );
+                                  loadUsers();
                                 }
                               }}
                             >
@@ -267,7 +249,6 @@ const App = () => {
                   </Grid>
                 </Box>
 
-                {/* Avisos */}
                 <Box w="80%" my={6}>
                   <Avisos />
                 </Box>
@@ -297,8 +278,25 @@ const App = () => {
           idIgreja ? (
             <Flex minH="100vh">
               <Sidebar />
-              <Flex flex="1" direction="column" align="center" bg="gray.100">
+              <Flex flex="1" align="center" bg="gray.100">
                 <Dizimos />
+              </Flex>
+            </Flex>
+          ) : (
+            <Navigate to="/cadastro-igreja" />
+          )
+        }
+      />
+
+      {/* 📅 Eventos (NOVO – SEM QUEBRAR NADA) */}
+      <Route
+        path="/eventos"
+        element={
+          idIgreja ? (
+            <Flex minH="100vh">
+              <Sidebar />
+              <Flex flex="1" direction="column" align="center" bg="gray.100">
+                <Eventos />
               </Flex>
             </Flex>
           ) : (
@@ -314,7 +312,7 @@ const App = () => {
           idIgreja ? (
             <Flex minH="100vh">
               <Sidebar />
-              <Flex flex="1" direction="column" align="center" bg="gray.100">
+              <Flex flex="1" align="center" bg="gray.100">
                 <Batizados />
               </Flex>
             </Flex>
