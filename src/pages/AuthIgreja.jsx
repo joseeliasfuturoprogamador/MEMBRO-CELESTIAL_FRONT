@@ -13,11 +13,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// 🔧 URL do backend
+// URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
 
 const CadastroLogin = () => {
   const [modoCadastro, setModoCadastro] = useState(true);
+
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -52,7 +53,11 @@ const CadastroLogin = () => {
         );
 
         // Salva temporariamente o email e o ID da igreja
-        sessionStorage.setItem("igrejaEmail", formData.email);
+        sessionStorage.setItem(
+          "igrejaEmail",
+          formData.email
+        );
+
         sessionStorage.setItem(
           "idIgrejaTemp",
           String(response.data.idIgreja)
@@ -75,10 +80,13 @@ const CadastroLogin = () => {
       // LOGIN
       // =========================
       else {
-        const response = await axios.post(`${API_URL}/api/login`, {
-          nome: formData.email,
-          senha: formData.senha,
-        });
+        const response = await axios.post(
+          `${API_URL}/api/login`,
+          {
+            nome: formData.email,
+            senha: formData.senha,
+          }
+        );
 
         const { idIgreja } = response.data;
 
@@ -86,7 +94,8 @@ const CadastroLogin = () => {
         if (!idIgreja) {
           toast({
             title: "Login não permitido",
-            description: "Sua igreja ainda não foi confirmada.",
+            description:
+              "Sua igreja ainda não foi confirmada.",
             status: "warning",
             duration: 5000,
             isClosable: true,
@@ -98,7 +107,10 @@ const CadastroLogin = () => {
         // ==========================================
         // SALVA O ID DEFINITIVO DA IGREJA
         // ==========================================
-        sessionStorage.setItem("idIgreja", String(idIgreja));
+        sessionStorage.setItem(
+          "idIgreja",
+          String(idIgreja)
+        );
 
         // Remove possível ID temporário antigo
         sessionStorage.removeItem("idIgrejaTemp");
@@ -120,8 +132,7 @@ const CadastroLogin = () => {
         // ENTRA NO DASHBOARD
         // ==========================================
         setTimeout(() => {
-          window.location.href =
-            "/MEMBRO-CELESTIAL_FRONT/dashboard";
+          navigate("/dashboard");
         }, 500);
       }
     } catch (error) {
@@ -133,7 +144,8 @@ const CadastroLogin = () => {
       toast({
         title: "Erro",
         description:
-          error.response?.data?.message || error.message,
+          error.response?.data?.message ||
+          error.message,
         status: "error",
         duration: 5000,
         isClosable: true,
