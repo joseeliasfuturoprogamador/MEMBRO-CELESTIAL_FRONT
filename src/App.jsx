@@ -1,6 +1,17 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
 import axios from "axios";
+
 import {
   Flex,
   Box,
@@ -12,135 +23,432 @@ import {
   InputLeftElement,
   useToast,
   Heading,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { EditIcon, DeleteIcon, AddIcon, SearchIcon } from "@chakra-ui/icons";
-import { useDisclosure } from "@chakra-ui/react";
 
+import {
+  EditIcon,
+  DeleteIcon,
+  AddIcon,
+  SearchIcon,
+} from "@chakra-ui/icons";
+
+// COMPONENTES PRINCIPAIS
 import Sidebar from "./componentes/Sidebar";
+import ModalComp from "./componentes/ModalComp";
+import SupportButton from "./componentes/SuportButton";
+
+// AUTENTICAÇÃO
 import CadastroIgreja from "./pages/AuthIgreja";
 import ConfirmarCodigo from "./pages/VerificarToken";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
-import ModalComp from "./componentes/ModalComp";
-import SupportButton from "./componentes/SuportButton";
 
+// MÓDULOS DO SISTEMA
 import Dizimos from "./componentes/Dizimos";
 import Avisos from "./componentes/Avisos";
 import Batizados from "./componentes/Batizados";
-import Eventos from "./componentes/Eventos"; // ✅ ADICIONADO
+import Eventos from "./componentes/Eventos";
+import CartasCartoes from "./componentes/CartasCartoes";
+import Configuracoes from "./componentes/Configuracoes";
 
-// 🔧 URL do backend
-const API_URL = import.meta.env.VITE_API_URL;
+// URL DO BACKEND
+const API_URL =
+  import.meta.env.VITE_API_URL;
 
 const App = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [data, setData] = useState([]);
-  const [dataEdit, setDataEdit] = useState({});
-  const [search, setSearch] = useState("");
-  const [statusMembros, setStatusMembros] = useState({});
-  const [idIgreja, setIdIgreja] = useState(
-    () => sessionStorage.getItem("idIgreja") || ""
+  const {
+    isOpen,
+    onOpen,
+    onClose,
+  } = useDisclosure();
+
+  const [
+    data,
+    setData,
+  ] = useState([]);
+
+  const [
+    dataEdit,
+    setDataEdit,
+  ] = useState({});
+
+  const [
+    search,
+    setSearch,
+  ] = useState("");
+
+  const [
+    statusMembros,
+    setStatusMembros,
+  ] = useState({});
+
+  const [
+    idIgreja,
+    setIdIgreja,
+  ] = useState(
+    () =>
+      sessionStorage.getItem(
+        "idIgreja"
+      ) || ""
   );
+
   const toast = useToast();
 
-  // 🔹 Carregar membros
-  const loadUsers = useCallback(async () => {
-    if (!idIgreja) {
-      setData([]);
-      setStatusMembros({});
-      return;
-    }
+  // =====================================================
+  // CARREGAR MEMBROS
+  // =====================================================
 
-    try {
-      const response = await axios.get(`${API_URL}/api/users`, {
-        headers: { "X-Igreja-Id": idIgreja },
-      });
+  const loadUsers =
+    useCallback(async () => {
+      if (!idIgreja) {
+        setData([]);
+        setStatusMembros({});
+        return;
+      }
 
-      setData(response.data || []);
+      try {
+        const response =
+          await axios.get(
+            `${API_URL}/api/users`,
+            {
+              headers: {
+                "X-Igreja-Id":
+                  idIgreja,
+              },
+            }
+          );
 
-      const statusInicial =
-        response.data?.reduce((acc, user) => {
-          acc[user._id] = true;
-          return acc;
-        }, {}) || {};
+        const usuarios =
+          Array.isArray(
+            response.data
+          )
+            ? response.data
+            : [];
 
-      setStatusMembros(statusInicial);
-    } catch (error) {
-      toast({
-        title: "Erro ao carregar usuários",
-        description:
-          error.response?.data?.message || "Verifique o servidor",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-      setData([]);
-    }
-  }, [idIgreja, toast]);
+        setData(
+          usuarios
+        );
 
-  // 🔹 Atualiza idIgreja ao focar na aba
+        const statusInicial =
+          usuarios.reduce(
+            (
+              acc,
+              user
+            ) => {
+              acc[
+                user._id
+              ] = true;
+
+              return acc;
+            },
+            {}
+          );
+
+        setStatusMembros(
+          statusInicial
+        );
+      } catch (error) {
+        console.error(
+          "Erro ao carregar usuários:",
+          error
+        );
+
+        toast({
+          title:
+            "Erro ao carregar usuários",
+
+          description:
+            error.response
+              ?.data
+              ?.message ||
+            "Verifique se o servidor está funcionando.",
+
+          status:
+            "error",
+
+          duration:
+            5000,
+
+          isClosable:
+            true,
+        });
+
+        setData([]);
+        setStatusMembros({});
+      }
+    }, [
+      idIgreja,
+      toast,
+    ]);
+
+  // =====================================================
+  // ATUALIZAR ID DA IGREJA
+  // =====================================================
+
   useEffect(() => {
-    const atualizarIdIgreja = () => {
-      const novoId = sessionStorage.getItem("idIgreja") || "";
-      if (novoId !== idIgreja) setIdIgreja(novoId);
+    const atualizarIdIgreja =
+      () => {
+        const novoIdIgreja =
+          sessionStorage.getItem(
+            "idIgreja"
+          ) || "";
+
+        if (
+          novoIdIgreja !==
+          idIgreja
+        ) {
+          setIdIgreja(
+            novoIdIgreja
+          );
+        }
+      };
+
+    window.addEventListener(
+      "focus",
+      atualizarIdIgreja
+    );
+
+    return () => {
+      window.removeEventListener(
+        "focus",
+        atualizarIdIgreja
+      );
     };
-    window.addEventListener("focus", atualizarIdIgreja);
-    return () => window.removeEventListener("focus", atualizarIdIgreja);
   }, [idIgreja]);
 
-  // 🔹 Recarrega membros quando muda igreja
+  // =====================================================
+  // RECARREGAR MEMBROS
+  // =====================================================
+
   useEffect(() => {
-    if (idIgreja) loadUsers();
-  }, [idIgreja, loadUsers]);
+    if (idIgreja) {
+      loadUsers();
+    }
+  }, [
+    idIgreja,
+    loadUsers,
+  ]);
+
+  // =====================================================
+  // EXCLUIR MEMBRO
+  // =====================================================
+
+  const excluirMembro =
+    async (
+      membroId
+    ) => {
+      const confirmar =
+        window.confirm(
+          "Tem certeza que deseja excluir este usuário?"
+        );
+
+      if (!confirmar) {
+        return;
+      }
+
+      try {
+        await axios.delete(
+          `${API_URL}/api/users/${membroId}`,
+          {
+            headers: {
+              "X-Igreja-Id":
+                idIgreja,
+            },
+          }
+        );
+
+        toast({
+          title:
+            "Membro excluído",
+
+          description:
+            "O membro foi excluído com sucesso.",
+
+          status:
+            "success",
+
+          duration:
+            3000,
+
+          isClosable:
+            true,
+        });
+
+        await loadUsers();
+      } catch (error) {
+        console.error(
+          "Erro ao excluir membro:",
+          error
+        );
+
+        toast({
+          title:
+            "Erro ao excluir membro",
+
+          description:
+            error.response
+              ?.data
+              ?.message ||
+            "Não foi possível excluir o membro.",
+
+          status:
+            "error",
+
+          duration:
+            5000,
+
+          isClosable:
+            true,
+        });
+      }
+    };
+
+  // =====================================================
+  // FILTRAR MEMBROS
+  // =====================================================
+
+  const membrosFiltrados =
+    data.filter(
+      (user) => {
+        if (
+          typeof user.nome !==
+          "string"
+        ) {
+          return false;
+        }
+
+        return user.nome
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          );
+      }
+    );
+
+  // =====================================================
+  // ROTAS
+  // =====================================================
 
   return (
     <Routes>
-      {/* 🔥 Redirecionamento inteligente */}
+      {/* ============================================== */}
+      {/* ROTA INICIAL */}
+      {/* ============================================== */}
+
       <Route
         path="/"
         element={
           idIgreja ? (
-            <Navigate to="/dashboard" />
+            <Navigate
+              to="/dashboard"
+              replace
+            />
           ) : (
-            <Navigate to="/cadastro-igreja" />
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
           )
         }
       />
 
-      {/* 🔐 Auth */}
-      <Route path="/cadastro-igreja" element={<CadastroIgreja />} />
-      <Route path="/confirmar-codigo" element={<ConfirmarCodigo />} />
-      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+      {/* ============================================== */}
+      {/* AUTENTICAÇÃO */}
+      {/* ============================================== */}
 
-      {/* 🧑‍🤝‍🧑 Dashboard (INÍCIO) */}
+      <Route
+        path="/cadastro-igreja"
+        element={
+          <CadastroIgreja />
+        }
+      />
+
+      <Route
+        path="/confirmar-codigo"
+        element={
+          <ConfirmarCodigo />
+        }
+      />
+
+      <Route
+        path="/recuperar-senha"
+        element={
+          <RecuperarSenha />
+        }
+      />
+
+      <Route
+        path="/redefinir-senha"
+        element={
+          <RedefinirSenha />
+        }
+      />
+
+      {/* ============================================== */}
+      {/* DASHBOARD */}
+      {/* ============================================== */}
+
       <Route
         path="/dashboard"
         element={
           idIgreja ? (
-            <Flex minH="100vh">
+            <Flex
+              minH="100vh"
+            >
               <Sidebar />
 
-              <Flex flex="1" direction="column" align="center" bg="gray.100">
-                {/* Frase */}
-                <Box w="100%" py={2} textAlign="center" bg="gray.200">
+              <Flex
+                flex="1"
+                direction="column"
+                align="center"
+                bg="gray.100"
+              >
+                {/* FRASE BÍBLICA */}
+
+                <Box
+                  w="100%"
+                  py={2}
+                  textAlign="center"
+                  bg="gray.200"
+                >
                   <Text
                     fontSize="sm"
                     color="gray.700"
                     fontWeight="bold"
                     fontStyle="italic"
                   >
-                    Mateus 11:28 – “Vinde a mim, todos os que estais cansados e
-                    oprimidos, e eu vos aliviarei.”
+                    Mateus
+                    11:28 –
+                    “Vinde a
+                    mim, todos
+                    os que
+                    estais
+                    cansados e
+                    oprimidos,
+                    e eu vos
+                    aliviarei.”
                   </Text>
                 </Box>
 
-                {/* Título */}
-                <Box bg="blue.500" w="100%" py={4} textAlign="center">
-                  <Heading color="white">MEMBRO CELESTIAL</Heading>
+                {/* TÍTULO */}
+
+                <Box
+                  bg="blue.500"
+                  w="100%"
+                  py={4}
+                  textAlign="center"
+                >
+                  <Heading
+                    color="white"
+                  >
+                    MEMBRO
+                    CELESTIAL
+                  </Heading>
                 </Box>
 
-                {/* Lista de membros */}
+                {/* LISTA DE MEMBROS */}
+
                 <Box
                   w="80%"
                   my={6}
@@ -149,42 +457,90 @@ const App = () => {
                   borderRadius="md"
                   boxShadow="lg"
                 >
-                  <Flex justify="space-between" mb={4}>
+                  <Flex
+                    justify="space-between"
+                    align="center"
+                    gap={4}
+                    mb={4}
+                    direction={{
+                      base:
+                        "column",
+                      md:
+                        "row",
+                    }}
+                  >
                     <Button
-                      leftIcon={<AddIcon />}
+                      leftIcon={
+                        <AddIcon />
+                      }
                       colorScheme="blue"
                       onClick={() => {
-                        setDataEdit({});
+                        setDataEdit(
+                          {}
+                        );
+
                         onOpen();
                       }}
                     >
-                      Criar novo Membro
+                      Criar
+                      novo
+                      Membro
                     </Button>
 
-                    <InputGroup width="300px">
-                      <InputLeftElement pointerEvents="none">
-                        <SearchIcon color="black" />
+                    <InputGroup
+                      width={{
+                        base:
+                          "100%",
+                        md:
+                          "300px",
+                      }}
+                    >
+                      <InputLeftElement
+                        pointerEvents="none"
+                      >
+                        <SearchIcon
+                          color="black"
+                        />
                       </InputLeftElement>
+
                       <Input
                         placeholder="Pesquisar Membro"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        value={
+                          search
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setSearch(
+                            event
+                              .target
+                              .value
+                          )
+                        }
                       />
                     </InputGroup>
                   </Flex>
 
-                  <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-                    {data
-                      .filter(
-                        (user) =>
-                          typeof user.nome === "string" &&
-                          user.nome
-                            .toLowerCase()
-                            .includes(search.toLowerCase())
-                      )
-                      .map(({ _id, nome }) => (
+                  <Grid
+                    templateColumns={{
+                      base:
+                        "1fr",
+                      md:
+                        "repeat(2, 1fr)",
+                      lg:
+                        "repeat(3, 1fr)",
+                    }}
+                    gap={4}
+                  >
+                    {membrosFiltrados.map(
+                      ({
+                        _id,
+                        nome,
+                      }) => (
                         <Box
-                          key={_id}
+                          key={
+                            _id
+                          }
                           p={4}
                           borderWidth="1px"
                           borderRadius="lg"
@@ -193,26 +549,62 @@ const App = () => {
                           <Flex
                             justify="space-between"
                             align="center"
+                            gap={3}
                             mb={3}
                           >
-                            <Text fontWeight="bold" fontSize="lg">
-                              {nome}
+                            <Text
+                              fontWeight="bold"
+                              fontSize="lg"
+                            >
+                              {
+                                nome
+                              }
                             </Text>
 
-                            <Text fontSize="sm" fontWeight="bold">
-                              {statusMembros[_id] ? "Ativo" : "Inativo"}
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                statusMembros[
+                                  _id
+                                ]
+                                  ? "green.500"
+                                  : "red.500"
+                              }
+                            >
+                              {statusMembros[
+                                _id
+                              ]
+                                ? "Ativo"
+                                : "Inativo"}
                             </Text>
                           </Flex>
 
-                          <Flex justify="space-between">
+                          <Flex
+                            justify="space-between"
+                            gap={3}
+                          >
                             <Button
                               size="sm"
-                              leftIcon={<EditIcon />}
+                              leftIcon={
+                                <EditIcon />
+                              }
                               colorScheme="yellow"
                               onClick={() => {
+                                const membroSelecionado =
+                                  data.find(
+                                    (
+                                      user
+                                    ) =>
+                                      user._id ===
+                                      _id
+                                  );
+
                                 setDataEdit(
-                                  data.find((user) => user._id === _id)
+                                  membroSelecionado ||
+                                    {}
                                 );
+
                                 onOpen();
                               }}
                             >
@@ -221,104 +613,254 @@ const App = () => {
 
                             <Button
                               size="sm"
-                              leftIcon={<DeleteIcon />}
+                              leftIcon={
+                                <DeleteIcon />
+                              }
                               colorScheme="red"
-                              onClick={async () => {
-                                if (
-                                  window.confirm(
-                                    "Tem certeza que deseja excluir este usuário?"
-                                  )
-                                ) {
-                                  await axios.delete(
-                                    `${API_URL}/api/users/${_id}`,
-                                    {
-                                      headers: {
-                                        "X-Igreja-Id": idIgreja,
-                                      },
-                                    }
-                                  );
-                                  loadUsers();
-                                }
-                              }}
+                              onClick={() =>
+                                excluirMembro(
+                                  _id
+                                )
+                              }
                             >
                               Excluir
                             </Button>
                           </Flex>
                         </Box>
-                      ))}
+                      )
+                    )}
                   </Grid>
+
+                  {membrosFiltrados.length ===
+                    0 && (
+                    <Box
+                      py={8}
+                      textAlign="center"
+                    >
+                      <Text
+                        color="gray.500"
+                        fontWeight="bold"
+                      >
+                        Nenhum
+                        membro
+                        encontrado.
+                      </Text>
+                    </Box>
+                  )}
                 </Box>
 
-                <Box w="80%" my={6}>
+                {/* AVISOS */}
+
+                <Box
+                  w="80%"
+                  my={6}
+                >
                   <Avisos />
                 </Box>
 
+                {/* MODAL */}
+
                 <ModalComp
-                  isOpen={isOpen}
-                  onClose={onClose}
-                  dataEdit={dataEdit}
-                  loadUsers={loadUsers}
-                  setData={setData}
-                  data={data}
+                  isOpen={
+                    isOpen
+                  }
+                  onClose={
+                    onClose
+                  }
+                  dataEdit={
+                    dataEdit
+                  }
+                  loadUsers={
+                    loadUsers
+                  }
+                  setData={
+                    setData
+                  }
+                  data={
+                    data
+                  }
                 />
 
                 <SupportButton />
               </Flex>
             </Flex>
           ) : (
-            <Navigate to="/cadastro-igreja" />
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
           )
         }
       />
 
-      {/* 💰 Dízimos */}
+      {/* ============================================== */}
+      {/* DÍZIMOS */}
+      {/* ============================================== */}
+
       <Route
         path="/dizimos"
         element={
           idIgreja ? (
-            <Flex minH="100vh">
+            <Flex
+              minH="100vh"
+            >
               <Sidebar />
-              <Flex flex="1" align="center" bg="gray.100">
+
+              <Flex
+                flex="1"
+                align="center"
+                bg="gray.100"
+              >
                 <Dizimos />
               </Flex>
             </Flex>
           ) : (
-            <Navigate to="/cadastro-igreja" />
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
           )
         }
       />
 
-      {/* 📅 Eventos (NOVO – SEM QUEBRAR NADA) */}
+      {/* ============================================== */}
+      {/* EVENTOS */}
+      {/* ============================================== */}
+
       <Route
         path="/eventos"
         element={
           idIgreja ? (
-            <Flex minH="100vh">
+            <Flex
+              minH="100vh"
+            >
               <Sidebar />
-              <Flex flex="1" direction="column" align="center" bg="gray.100">
+
+              <Flex
+                flex="1"
+                direction="column"
+                align="center"
+                bg="gray.100"
+              >
                 <Eventos />
               </Flex>
             </Flex>
           ) : (
-            <Navigate to="/cadastro-igreja" />
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
           )
         }
       />
 
-      {/* 💧 Batismos */}
+      {/* ============================================== */}
+      {/* BATISMO */}
+      {/* ============================================== */}
+
       <Route
         path="/batismo"
         element={
           idIgreja ? (
-            <Flex minH="100vh">
+            <Flex
+              minH="100vh"
+            >
               <Sidebar />
-              <Flex flex="1" align="center" bg="gray.100">
+
+              <Flex
+                flex="1"
+                align="center"
+                bg="gray.100"
+              >
                 <Batizados />
               </Flex>
             </Flex>
           ) : (
-            <Navigate to="/cadastro-igreja" />
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
           )
+        }
+      />
+
+      {/* ============================================== */}
+      {/* CARTAS E CARTÕES */}
+      {/* ============================================== */}
+
+      <Route
+        path="/cartas-cartoes"
+        element={
+          idIgreja ? (
+            <Flex
+              minH="100vh"
+            >
+              <Sidebar />
+
+              <Flex
+                flex="1"
+                direction="column"
+                bg="gray.100"
+                minH="100vh"
+              >
+                <CartasCartoes />
+              </Flex>
+            </Flex>
+          ) : (
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
+          )
+        }
+      />
+
+      {/* ============================================== */}
+      {/* CONFIGURAÇÕES DA IGREJA */}
+      {/* ============================================== */}
+
+      <Route
+        path="/configuracoes"
+        element={
+          idIgreja ? (
+            <Flex
+              minH="100vh"
+            >
+              <Sidebar />
+
+              <Flex
+                flex="1"
+                direction="column"
+                bg="gray.100"
+                minH="100vh"
+              >
+                <Configuracoes />
+              </Flex>
+            </Flex>
+          ) : (
+            <Navigate
+              to="/cadastro-igreja"
+              replace
+            />
+          )
+        }
+      />
+
+      {/* ============================================== */}
+      {/* ROTA INEXISTENTE */}
+      {/* ============================================== */}
+
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to={
+              idIgreja
+                ? "/dashboard"
+                : "/cadastro-igreja"
+            }
+            replace
+          />
         }
       />
     </Routes>

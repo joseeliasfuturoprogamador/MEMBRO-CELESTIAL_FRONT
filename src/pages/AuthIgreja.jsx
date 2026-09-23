@@ -18,46 +18,71 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const CadastroLogin = () => {
   const [modoCadastro, setModoCadastro] = useState(true);
-  const [formData, setFormData] = useState({ nome: "", email: "", senha: "" });
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+  });
+
   const navigate = useNavigate();
   const toast = useToast();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      if (!API_URL) throw new Error("API_URL não definida!");
+      if (!API_URL) {
+        throw new Error("API_URL não definida!");
+      }
 
+      // =========================
+      // CADASTRO
+      // =========================
       if (modoCadastro) {
-        // CADASTRO
-        const response = await axios.post(`${API_URL}/api/cadastrar`, formData);
+        const response = await axios.post(
+          `${API_URL}/api/cadastrar`,
+          formData
+        );
 
-        // Salva temporariamente email e idIgreja retornado pelo backend
+        // Salva temporariamente o email e o ID da igreja
         sessionStorage.setItem("igrejaEmail", formData.email);
-        sessionStorage.setItem("idIgrejaTemp", response.data.idIgreja);
+        sessionStorage.setItem(
+          "idIgrejaTemp",
+          String(response.data.idIgreja)
+        );
 
         toast({
           title: "Cadastro realizado!",
-          description: "Verifique seu email e insira o código para confirmar.",
+          description:
+            "Verifique seu email e insira o código para confirmar.",
           status: "success",
           duration: 5000,
           isClosable: true,
         });
 
-        // Redireciona para tela de confirmação de código
+        // Vai para confirmação do código
         navigate("/confirmar-codigo");
-      } else {
-        // LOGIN
+      }
+
+      // =========================
+      // LOGIN
+      // =========================
+      else {
         const response = await axios.post(`${API_URL}/api/login`, {
-          nome: formData.email, // Backend aceita nome ou email
+          nome: formData.email,
           senha: formData.senha,
         });
 
         const { idIgreja } = response.data;
 
+        // Verifica se a igreja foi confirmada
         if (!idIgreja) {
           toast({
             title: "Login não permitido",
@@ -66,36 +91,63 @@ const CadastroLogin = () => {
             duration: 5000,
             isClosable: true,
           });
+
           return;
         }
 
-        // Salva idIgreja definitivo no sessionStorage
-        sessionStorage.setItem("idIgreja", idIgreja);
+        // ==========================================
+        // SALVA O ID DEFINITIVO DA IGREJA
+        // ==========================================
+        sessionStorage.setItem("idIgreja", String(idIgreja));
+
+        // Remove possível ID temporário antigo
+        sessionStorage.removeItem("idIgrejaTemp");
+
+        console.log(
+          "Login realizado. ID da igreja:",
+          sessionStorage.getItem("idIgreja")
+        );
 
         toast({
           title: "Login realizado!",
-          description: "Redirecionando para o dashboard...",
+          description: "Entrando no dashboard...",
           status: "success",
-          duration: 3000,
+          duration: 1500,
           isClosable: true,
         });
 
-        navigate("/dashboard");
+        // ==========================================
+        // ENTRA NO DASHBOARD
+        // ==========================================
+        setTimeout(() => {
+          window.location.href =
+            "/MEMBRO-CELESTIAL_FRONT/dashboard";
+        }, 500);
       }
     } catch (error) {
+      console.error(
+        "Erro no login/cadastro:",
+        error.response?.data || error.message
+      );
+
       toast({
         title: "Erro",
-        description: error.response?.data?.message || error.message,
+        description:
+          error.response?.data?.message || error.message,
         status: "error",
         duration: 5000,
         isClosable: true,
       });
-      console.error(error.response?.data || error.message);
     }
   };
 
   return (
-    <Flex h="100vh" align="center" justify="center" bg="gray.100">
+    <Flex
+      h="100vh"
+      align="center"
+      justify="center"
+      bg="gray.100"
+    >
       <Flex
         w={{ base: "90%", md: "900px" }}
         bg="white"
@@ -103,6 +155,7 @@ const CadastroLogin = () => {
         borderRadius="lg"
         overflow="hidden"
       >
+        {/* LADO DA LOGO */}
         <Box
           w="40%"
           bg="blue.500"
@@ -120,6 +173,7 @@ const CadastroLogin = () => {
           />
         </Box>
 
+        {/* FORMULÁRIO */}
         <Box w="60%" p={10}>
           <Text
             fontSize="3xl"
@@ -127,10 +181,18 @@ const CadastroLogin = () => {
             textAlign="center"
             color="blue.700"
           >
-            {modoCadastro ? "Criar Conta da Igreja" : "Login da Igreja"}
+            {modoCadastro
+              ? "Criar Conta da Igreja"
+              : "Login da Igreja"}
           </Text>
 
-          <VStack spacing={5} mt={6} as="form" onSubmit={handleSubmit}>
+          <VStack
+            spacing={5}
+            mt={6}
+            as="form"
+            onSubmit={handleSubmit}
+          >
+            {/* CAMPOS DO CADASTRO */}
             {modoCadastro && (
               <>
                 <Input
@@ -141,6 +203,7 @@ const CadastroLogin = () => {
                   required
                   autoComplete="email"
                 />
+
                 <Input
                   placeholder="Nome da Igreja"
                   name="nome"
@@ -151,6 +214,8 @@ const CadastroLogin = () => {
                 />
               </>
             )}
+
+            {/* CAMPO DE EMAIL NO LOGIN */}
             {!modoCadastro && (
               <Input
                 placeholder="E-mail da Igreja"
@@ -161,6 +226,8 @@ const CadastroLogin = () => {
                 autoComplete="email"
               />
             )}
+
+            {/* SENHA */}
             <Input
               placeholder="Senha"
               type="password"
@@ -170,26 +237,44 @@ const CadastroLogin = () => {
               required
               autoComplete="current-password"
             />
-            <Button w="full" colorScheme="blue" type="submit">
+
+            {/* BOTÃO */}
+            <Button
+              w="full"
+              colorScheme="blue"
+              type="submit"
+            >
               {modoCadastro ? "Registrar" : "Entrar"}
             </Button>
           </VStack>
 
+          {/* RECUPERAR SENHA */}
           {!modoCadastro && (
-            <Text mt={2} textAlign="center" color="blue.500">
-              <Link onClick={() => navigate("/recuperar-senha")}>
+            <Text
+              mt={2}
+              textAlign="center"
+              color="blue.500"
+            >
+              <Link
+                onClick={() =>
+                  navigate("/recuperar-senha")
+                }
+              >
                 Esqueceu a senha?
               </Link>
             </Text>
           )}
 
+          {/* ALTERAR ENTRE LOGIN E CADASTRO */}
           <Text
             mt={6}
             textAlign="center"
             color="gray.600"
             fontWeight="medium"
             cursor="pointer"
-            onClick={() => setModoCadastro(!modoCadastro)}
+            onClick={() =>
+              setModoCadastro(!modoCadastro)
+            }
           >
             {modoCadastro
               ? "Já tem conta? Faça login!"
