@@ -52,7 +52,6 @@ const CadastroLogin = () => {
           formData
         );
 
-        // Salva temporariamente o email e o ID da igreja
         sessionStorage.setItem(
           "igrejaEmail",
           formData.email
@@ -72,7 +71,6 @@ const CadastroLogin = () => {
           isClosable: true,
         });
 
-        // Vai para confirmação do código
         navigate("/confirmar-codigo");
       }
 
@@ -90,7 +88,6 @@ const CadastroLogin = () => {
 
         const { idIgreja } = response.data;
 
-        // Verifica se a igreja foi confirmada
         if (!idIgreja) {
           toast({
             title: "Login não permitido",
@@ -104,9 +101,7 @@ const CadastroLogin = () => {
           return;
         }
 
-        // ==========================================
-        // SALVA O ID DEFINITIVO DA IGREJA
-        // ==========================================
+        // Salva o ID definitivo da igreja
         sessionStorage.setItem(
           "idIgreja",
           String(idIgreja)
@@ -128,12 +123,8 @@ const CadastroLogin = () => {
           isClosable: true,
         });
 
-        // ==========================================
-        // ENTRA NO DASHBOARD
-        // ==========================================
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 500);
+        // Entra imediatamente no dashboard
+        navigate("/dashboard", { replace: true });
       }
     } catch (error) {
       console.error(
