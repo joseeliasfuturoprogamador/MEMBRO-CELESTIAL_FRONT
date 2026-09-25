@@ -1,761 +1,429 @@
+import { useState } from "react";
 import {
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-
-import {
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
-
-import axios from "axios";
-
-import {
-  Flex,
   Box,
   Button,
-  Grid,
-  Text,
+  Flex,
   Input,
-  InputGroup,
-  InputLeftElement,
+  Text,
+  VStack,
+  Image,
   useToast,
-  Heading,
-  useDisclosure,
+  Link,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-import {
-  EditIcon,
-  DeleteIcon,
-  AddIcon,
-  SearchIcon,
-} from "@chakra-ui/icons";
-
-// COMPONENTES PRINCIPAIS
-import Sidebar from "./componentes/Sidebar";
-import ModalComp from "./componentes/ModalComp";
-import SupportButton from "./componentes/SuportButton";
-
-// AUTENTICAÇÃO
-import CadastroIgreja from "./pages/AuthIgreja";
-import ConfirmarCodigo from "./pages/VerificarToken";
-import RecuperarSenha from "./pages/RecuperarSenha";
-import RedefinirSenha from "./pages/RedefinirSenha";
-
-// MÓDULOS DO SISTEMA
-import Dizimos from "./componentes/Dizimos";
-import Avisos from "./componentes/Avisos";
-import Batizados from "./componentes/Batizados";
-import Eventos from "./componentes/Eventos";
-import CartasCartoes from "./componentes/CartasCartoes";
-import Configuracoes from "./componentes/Configuracoes";
-
-// URL DO BACKEND
+// URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
 
-const App = () => {
-  const {
-    isOpen,
-    onOpen,
-    onClose,
-  } = useDisclosure();
+const CadastroLogin = () => {
+  const [modoCadastro, setModoCadastro] = useState(true);
+  const [carregando, setCarregando] = useState(false);
 
-  const [data, setData] = useState([]);
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+  });
 
-  const [dataEdit, setDataEdit] = useState({});
-
-  const [search, setSearch] = useState("");
-
-  const [statusMembros, setStatusMembros] = useState({});
-
-  // =====================================================
-  // ID DA IGREJA
-  // =====================================================
-
-  const [idIgreja, setIdIgreja] = useState(
-    () =>
-      sessionStorage.getItem("idIgreja") || ""
-  );
-
+  const navigate = useNavigate();
   const toast = useToast();
 
-  // =====================================================
-  // CARREGAR MEMBROS
-  // =====================================================
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-  const loadUsers = useCallback(async () => {
-    if (!idIgreja) {
-      setData([]);
-      setStatusMembros({});
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (carregando) {
       return;
     }
 
     try {
-      const response = await axios.get(
-        `${API_URL}/api/users`,
-        {
-          headers: {
-            "X-Igreja-Id": idIgreja,
-          },
-        }
-      );
+      if (!API_URL) {
+        throw new Error("API_URL não definida!");
+      }
 
-      const usuarios = Array.isArray(
-        response.data
-      )
-        ? response.data
-        : [];
+      setCarregando(true);
 
-      setData(usuarios);
-
-      const statusInicial =
-        usuarios.reduce(
-          (acc, user) => {
-            acc[user._id] = true;
-
-            return acc;
-          },
-          {}
+      // =========================
+      // CADASTRO
+      // =========================
+      if (modoCadastro) {
+        const response = await axios.post(
+          `${API_URL}/api/cadastrar`,
+          formData
         );
 
-      setStatusMembros(statusInicial);
-    } catch (error) {
-      console.error(
-        "Erro ao carregar usuários:",
-        error
-      );
+        sessionStorage.setItem(
+          "igrejaEmail",
+          formData.email
+        );
 
-      toast({
-        title:
-          "Erro ao carregar usuários",
+        sessionStorage.setItem(
+          "idIgrejaTemp",
+          String(response.data.idIgreja)
+        );
 
-        description:
-          error.response?.data?.message ||
-          "Verifique se o servidor está funcionando.",
+        toast({
+          title: "Cadastro realizado!",
+          description:
+            "Verifique seu email e insira o código para confirmar.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
 
-        status: "error",
+        navigate("/confirmar-codigo");
 
-        duration: 5000,
+        return;
+      }
 
-        isClosable: true,
-      });
-
-      setData([]);
-      setStatusMembros({});
-    }
-  }, [idIgreja, toast]);
-
-  // =====================================================
-  // ATUALIZAR ID DA IGREJA
-  // =====================================================
-  //
-  // Esse evento é disparado pelo login depois que
-  // o idIgreja é salvo no sessionStorage.
-  //
-  // Isso evita o problema de o navigate() acontecer
-  // antes do React atualizar o estado.
-  // =====================================================
-
-  useEffect(() => {
-    const atualizarIdIgreja = () => {
-      const novoIdIgreja =
-        sessionStorage.getItem("idIgreja") || "";
-
-      console.log(
-        "Atualizando ID da igreja:",
-        novoIdIgreja
-      );
-
-      setIdIgreja(novoIdIgreja);
-    };
-
-    // Evento disparado após login
-    window.addEventListener(
-      "igrejaLogada",
-      atualizarIdIgreja
-    );
-
-    // Atualiza também quando a janela volta ao foco
-    window.addEventListener(
-      "focus",
-      atualizarIdIgreja
-    );
-
-    return () => {
-      window.removeEventListener(
-        "igrejaLogada",
-        atualizarIdIgreja
-      );
-
-      window.removeEventListener(
-        "focus",
-        atualizarIdIgreja
-      );
-    };
-  }, []);
-
-  // =====================================================
-  // RECARREGAR MEMBROS QUANDO ID DA IGREJA MUDAR
-  // =====================================================
-
-  useEffect(() => {
-    if (idIgreja) {
-      loadUsers();
-    } else {
-      setData([]);
-      setStatusMembros({});
-    }
-  }, [idIgreja, loadUsers]);
-
-  // =====================================================
-  // EXCLUIR MEMBRO
-  // =====================================================
-
-  const excluirMembro = async (membroId) => {
-    const confirmar = window.confirm(
-      "Tem certeza que deseja excluir este usuário?"
-    );
-
-    if (!confirmar) {
-      return;
-    }
-
-    try {
-      await axios.delete(
-        `${API_URL}/api/users/${membroId}`,
+      // =========================
+      // LOGIN
+      // =========================
+      const response = await axios.post(
+        `${API_URL}/api/login`,
         {
-          headers: {
-            "X-Igreja-Id": idIgreja,
-          },
+          nome: formData.email,
+          senha: formData.senha,
         }
       );
 
-      toast({
-        title: "Membro excluído",
+      const { idIgreja } = response.data;
 
-        description:
-          "O membro foi excluído com sucesso.",
+      if (!idIgreja) {
+        setCarregando(false);
 
-        status: "success",
+        toast({
+          title: "Login não permitido",
+          description:
+            "Sua igreja ainda não foi confirmada.",
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+        });
 
-        duration: 3000,
+        return;
+      }
 
-        isClosable: true,
-      });
+      // =========================
+      // SALVA ID DEFINITIVO
+      // =========================
+      sessionStorage.setItem(
+        "idIgreja",
+        String(idIgreja)
+      );
 
-      await loadUsers();
-    } catch (error) {
-      console.error(
-        "Erro ao excluir membro:",
-        error
+      sessionStorage.removeItem("idIgrejaTemp");
+
+      console.log(
+        "Login realizado. ID da igreja:",
+        sessionStorage.getItem("idIgreja")
       );
 
       toast({
-        title: "Erro ao excluir membro",
+        title: "Login realizado!",
+        description: "Entrando no dashboard...",
+        status: "success",
+        duration: 1200,
+        isClosable: true,
+      });
 
+      // =========================
+      // AVISA O APP QUE O LOGIN
+      // FOI REALIZADO
+      // =========================
+      window.dispatchEvent(
+        new Event("igrejaLogada")
+      );
+
+      // =========================
+      // VAI PARA O DASHBOARD
+      // =========================
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(
+        "Erro no login/cadastro:",
+        error.response?.data ||
+          error.message
+      );
+
+      setCarregando(false);
+
+      toast({
+        title: "Erro",
         description:
           error.response?.data?.message ||
-          "Não foi possível excluir o membro.",
-
+          error.message ||
+          "Não foi possível realizar a operação.",
         status: "error",
-
         duration: 5000,
-
         isClosable: true,
       });
     }
   };
 
-  // =====================================================
-  // FILTRAR MEMBROS
-  // =====================================================
-
-  const membrosFiltrados = data.filter(
-    (user) => {
-      if (
-        typeof user.nome !== "string"
-      ) {
-        return false;
-      }
-
-      return user.nome
-        .toLowerCase()
-        .includes(
-          search.toLowerCase()
-        );
-    }
-  );
-
-  // =====================================================
-  // ROTAS
-  // =====================================================
-
   return (
-    <Routes>
-      {/* =================================================
-          INÍCIO
-      ================================================= */}
+    <Flex
+      minH="100vh"
+      w="100%"
+      align="center"
+      justify="center"
+      bg="gray.100"
+      px={{ base: 3, sm: 5, md: 8 }}
+      py={{ base: 4, md: 8 }}
+      overflowY="auto"
+    >
+      <Flex
+        w="100%"
+        maxW="900px"
+        minH={{
+          base: "auto",
+          md: "550px",
+        }}
+        bg="white"
+        boxShadow="2xl"
+        borderRadius={{
+          base: "md",
+          md: "lg",
+        }}
+        overflow="hidden"
+        direction={{
+          base: "column",
+          md: "row",
+        }}
+      >
+        {/* =========================
+            LADO DA LOGO
+        ========================= */}
+        <Box
+          w={{
+            base: "100%",
+            md: "40%",
+          }}
+          minH={{
+            base: "180px",
+            sm: "210px",
+            md: "550px",
+          }}
+          bg="blue.500"
+          p={{
+            base: 4,
+            sm: 6,
+            md: 8,
+          }}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink={0}
+        >
+          <Image
+            src="./logo.jpg"
+            alt="Logo Membro Celestial"
+            maxW={{
+              base: "160px",
+              sm: "190px",
+              md: "250px",
+            }}
+            maxH={{
+              base: "150px",
+              sm: "180px",
+              md: "250px",
+            }}
+            w="auto"
+            h="auto"
+            objectFit="contain"
+            borderRadius="md"
+            boxShadow="xl"
+          />
+        </Box>
 
-      <Route
-        path="/"
-        element={
-          idIgreja ? (
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
-            />
-          )
-        }
-      />
+        {/* =========================
+            FORMULÁRIO
+        ========================= */}
+        <Box
+          w={{
+            base: "100%",
+            md: "60%",
+          }}
+          p={{
+            base: 5,
+            sm: 7,
+            md: 10,
+          }}
+        >
+          <Text
+            fontSize={{
+              base: "2xl",
+              sm: "2xl",
+              md: "3xl",
+            }}
+            fontWeight="bold"
+            textAlign="center"
+            color="blue.700"
+            lineHeight="1.2"
+          >
+            {modoCadastro
+              ? "Criar Conta da Igreja"
+              : "Login da Igreja"}
+          </Text>
 
-      {/* =================================================
-          AUTENTICAÇÃO
-      ================================================= */}
-
-      <Route
-        path="/cadastro-igreja"
-        element={<CadastroIgreja />}
-      />
-
-      <Route
-        path="/confirmar-codigo"
-        element={<ConfirmarCodigo />}
-      />
-
-      <Route
-        path="/recuperar-senha"
-        element={<RecuperarSenha />}
-      />
-
-      <Route
-        path="/redefinir-senha"
-        element={<RedefinirSenha />}
-      />
-
-      {/* =================================================
-          DASHBOARD
-      ================================================= */}
-
-      <Route
-        path="/dashboard"
-        element={
-          idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-
-              <Flex
-                flex="1"
-                direction="column"
-                align="center"
-                bg="gray.100"
-              >
-                {/* FRASE */}
-                <Box
+          <VStack
+            spacing={{
+              base: 4,
+              md: 5,
+            }}
+            mt={{
+              base: 5,
+              md: 6,
+            }}
+            as="form"
+            onSubmit={handleSubmit}
+            w="100%"
+          >
+            {/* =========================
+                CAMPOS DO CADASTRO
+            ========================= */}
+            {modoCadastro && (
+              <>
+                <Input
                   w="100%"
-                  py={2}
-                  textAlign="center"
-                  bg="gray.200"
-                >
-                  <Text
-                    fontSize="sm"
-                    color="gray.700"
-                    fontWeight="bold"
-                    fontStyle="italic"
-                  >
-                    Mateus 11:28 – “Vinde a mim,
-                    todos os que estais cansados
-                    e oprimidos, e eu vos aliviarei.”
-                  </Text>
-                </Box>
-
-                {/* CABEÇALHO */}
-                <Box
-                  bg="blue.500"
-                  w="100%"
-                  py={4}
-                  textAlign="center"
-                >
-                  <Heading color="white">
-                    MEMBRO CELESTIAL
-                  </Heading>
-                </Box>
-
-                {/* MEMBROS */}
-                <Box
-                  w={{
-                    base: "95%",
-                    md: "90%",
-                    lg: "80%",
-                  }}
-                  my={6}
-                  p={4}
-                  bg="white"
-                  borderRadius="md"
-                  boxShadow="lg"
-                >
-                  <Flex
-                    justify="space-between"
-                    align="center"
-                    gap={4}
-                    mb={4}
-                    direction={{
-                      base: "column",
-                      md: "row",
-                    }}
-                  >
-                    <Button
-                      leftIcon={<AddIcon />}
-                      colorScheme="blue"
-                      onClick={() => {
-                        setDataEdit({});
-                        onOpen();
-                      }}
-                      w={{
-                        base: "100%",
-                        md: "auto",
-                      }}
-                    >
-                      Criar novo Membro
-                    </Button>
-
-                    <InputGroup
-                      width={{
-                        base: "100%",
-                        md: "300px",
-                      }}
-                    >
-                      <InputLeftElement pointerEvents="none">
-                        <SearchIcon color="black" />
-                      </InputLeftElement>
-
-                      <Input
-                        placeholder="Pesquisar Membro"
-                        value={search}
-                        onChange={(event) =>
-                          setSearch(
-                            event.target.value
-                          )
-                        }
-                      />
-                    </InputGroup>
-                  </Flex>
-
-                  {/* LISTA DE MEMBROS */}
-                  <Grid
-                    templateColumns={{
-                      base: "1fr",
-                      md: "repeat(2, 1fr)",
-                      lg: "repeat(3, 1fr)",
-                    }}
-                    gap={4}
-                  >
-                    {membrosFiltrados.map(
-                      ({ _id, nome }) => (
-                        <Box
-                          key={_id}
-                          p={4}
-                          borderWidth="1px"
-                          borderRadius="lg"
-                          boxShadow="sm"
-                        >
-                          <Flex
-                            justify="space-between"
-                            align="center"
-                            gap={3}
-                            mb={3}
-                          >
-                            <Text
-                              fontWeight="bold"
-                              fontSize="lg"
-                            >
-                              {nome}
-                            </Text>
-
-                            <Text
-                              fontSize="sm"
-                              fontWeight="bold"
-                              color={
-                                statusMembros[_id]
-                                  ? "green.500"
-                                  : "red.500"
-                              }
-                            >
-                              {statusMembros[_id]
-                                ? "Ativo"
-                                : "Inativo"}
-                            </Text>
-                          </Flex>
-
-                          <Flex
-                            justify="space-between"
-                            gap={3}
-                          >
-                            <Button
-                              size="sm"
-                              leftIcon={
-                                <EditIcon />
-                              }
-                              colorScheme="yellow"
-                              onClick={() => {
-                                const membroSelecionado =
-                                  data.find(
-                                    (user) =>
-                                      user._id ===
-                                      _id
-                                  );
-
-                                setDataEdit(
-                                  membroSelecionado ||
-                                    {}
-                                );
-
-                                onOpen();
-                              }}
-                            >
-                              Editar
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              leftIcon={
-                                <DeleteIcon />
-                              }
-                              colorScheme="red"
-                              onClick={() =>
-                                excluirMembro(
-                                  _id
-                                )
-                              }
-                            >
-                              Excluir
-                            </Button>
-                          </Flex>
-                        </Box>
-                      )
-                    )}
-                  </Grid>
-
-                  {/* NENHUM MEMBRO */}
-                  {membrosFiltrados.length ===
-                    0 && (
-                    <Box
-                      py={8}
-                      textAlign="center"
-                    >
-                      <Text
-                        color="gray.500"
-                        fontWeight="bold"
-                      >
-                        Nenhum membro encontrado.
-                      </Text>
-                    </Box>
-                  )}
-                </Box>
-
-                {/* AVISOS */}
-                <Box
-                  w={{
-                    base: "95%",
-                    md: "90%",
-                    lg: "80%",
-                  }}
-                  my={6}
-                >
-                  <Avisos />
-                </Box>
-
-                {/* MODAL */}
-                <ModalComp
-                  isOpen={isOpen}
-                  onClose={onClose}
-                  dataEdit={dataEdit}
-                  loadUsers={loadUsers}
-                  setData={setData}
-                  data={data}
+                  size="lg"
+                  placeholder="E-mail da Igreja"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  autoComplete="email"
                 />
 
-                {/* SUPORTE */}
-                <SupportButton />
-              </Flex>
-            </Flex>
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
+                <Input
+                  w="100%"
+                  size="lg"
+                  placeholder="Nome da Igreja"
+                  name="nome"
+                  value={formData.nome}
+                  onChange={handleChange}
+                  required
+                  autoComplete="organization"
+                />
+              </>
+            )}
+
+            {/* =========================
+                EMAIL NO LOGIN
+            ========================= */}
+            {!modoCadastro && (
+              <Input
+                w="100%"
+                size="lg"
+                placeholder="E-mail da Igreja"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+                type="email"
+              />
+            )}
+
+            {/* =========================
+                SENHA
+            ========================= */}
+            <Input
+              w="100%"
+              size="lg"
+              placeholder="Senha"
+              type="password"
+              name="senha"
+              value={formData.senha}
+              onChange={handleChange}
+              required
+              autoComplete="current-password"
             />
-          )
-        }
-      />
 
-      {/* =================================================
-          DÍZIMOS
-      ================================================= */}
+            {/* =========================
+                BOTÃO
+            ========================= */}
+            <Button
+              w="100%"
+              minH="48px"
+              colorScheme="blue"
+              type="submit"
+              isLoading={carregando}
+              loadingText="Entrando..."
+              fontSize="md"
+            >
+              {modoCadastro
+                ? "Registrar"
+                : "Entrar"}
+            </Button>
+          </VStack>
 
-      <Route
-        path="/dizimos"
-        element={
-          idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-
-              <Flex
-                flex="1"
-                align="center"
-                bg="gray.100"
+          {/* =========================
+              RECUPERAR SENHA
+          ========================= */}
+          {!modoCadastro && (
+            <Text
+              mt={3}
+              textAlign="center"
+              color="blue.500"
+              fontSize={{
+                base: "sm",
+                md: "md",
+              }}
+            >
+              <Link
+                onClick={() =>
+                  navigate(
+                    "/recuperar-senha"
+                  )
+                }
+                cursor="pointer"
               >
-                <Dizimos />
-              </Flex>
-            </Flex>
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
-            />
-          )
-        }
-      />
+                Esqueceu a senha?
+              </Link>
+            </Text>
+          )}
 
-      {/* =================================================
-          EVENTOS
-      ================================================= */}
-
-      <Route
-        path="/eventos"
-        element={
-          idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-
-              <Flex
-                flex="1"
-                direction="column"
-                align="center"
-                bg="gray.100"
-              >
-                <Eventos />
-              </Flex>
-            </Flex>
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
-            />
-          )
-        }
-      />
-
-      {/* =================================================
-          BATISMO
-      ================================================ */}
-
-      <Route
-        path="/batismo"
-        element={
-          idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-
-              <Flex
-                flex="1"
-                align="center"
-                bg="gray.100"
-              >
-                <Batizados />
-              </Flex>
-            </Flex>
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
-            />
-          )
-        }
-      />
-
-      {/* =================================================
-          CARTAS E CARTÕES
-      ================================================= */}
-
-      <Route
-        path="/cartas-cartoes"
-        element={
-          idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-
-              <Flex
-                flex="1"
-                direction="column"
-                bg="gray.100"
-                minH="100vh"
-              >
-                <CartasCartoes />
-              </Flex>
-            </Flex>
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
-            />
-          )
-        }
-      />
-
-      {/* =================================================
-          CONFIGURAÇÕES
-      ================================================= */}
-
-      <Route
-        path="/configuracoes"
-        element={
-          idIgreja ? (
-            <Flex minH="100vh">
-              <Sidebar />
-
-              <Flex
-                flex="1"
-                direction="column"
-                bg="gray.100"
-                minH="100vh"
-              >
-                <Configuracoes />
-              </Flex>
-            </Flex>
-          ) : (
-            <Navigate
-              to="/cadastro-igreja"
-              replace
-            />
-          )
-        }
-      />
-
-      {/* =================================================
-          ROTA NÃO ENCONTRADA
-      ================================================= */}
-
-      <Route
-        path="*"
-        element={
-          <Navigate
-            to={
-              idIgreja
-                ? "/dashboard"
-                : "/cadastro-igreja"
+          {/* =========================
+              ALTERAR LOGIN/CADASTRO
+          ========================= */}
+          <Text
+            mt={{
+              base: 5,
+              md: 6,
+            }}
+            textAlign="center"
+            color="gray.600"
+            fontWeight="medium"
+            cursor="pointer"
+            fontSize={{
+              base: "sm",
+              md: "md",
+            }}
+            px={2}
+            onClick={() =>
+              setModoCadastro(
+                !modoCadastro
+              )
             }
-            replace
-          />
-        }
-      />
-    </Routes>
+          >
+            {modoCadastro
+              ? "Já tem conta? Faça login!"
+              : "Não tem conta? Cadastre-se!"}
+          </Text>
+        </Box>
+      </Flex>
+    </Flex>
   );
 };
 
-export default App;
+export default CadastroLogin;

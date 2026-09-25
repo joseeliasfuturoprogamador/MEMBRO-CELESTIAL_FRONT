@@ -53,8 +53,7 @@ import CartasCartoes from "./componentes/CartasCartoes";
 import Configuracoes from "./componentes/Configuracoes";
 
 // URL DO BACKEND
-const API_URL =
-  import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const App = () => {
   const {
@@ -63,34 +62,18 @@ const App = () => {
     onClose,
   } = useDisclosure();
 
-  const [
-    data,
-    setData,
-  ] = useState([]);
+  const [data, setData] = useState([]);
 
-  const [
-    dataEdit,
-    setDataEdit,
-  ] = useState({});
+  const [dataEdit, setDataEdit] = useState({});
 
-  const [
-    search,
-    setSearch,
-  ] = useState("");
+  const [search, setSearch] = useState("");
 
-  const [
-    statusMembros,
-    setStatusMembros,
-  ] = useState({});
+  const [statusMembros, setStatusMembros] = useState({});
 
-  const [
-    idIgreja,
-    setIdIgreja,
-  ] = useState(
+  // ID DA IGREJA
+  const [idIgreja, setIdIgreja] = useState(
     () =>
-      sessionStorage.getItem(
-        "idIgreja"
-      ) || ""
+      sessionStorage.getItem("idIgreja") || ""
   );
 
   const toast = useToast();
@@ -99,111 +82,83 @@ const App = () => {
   // CARREGAR MEMBROS
   // =====================================================
 
-  const loadUsers =
-    useCallback(async () => {
-      if (!idIgreja) {
-        setData([]);
-        setStatusMembros({});
-        return;
-      }
+  const loadUsers = useCallback(async () => {
+    if (!idIgreja) {
+      setData([]);
+      setStatusMembros({});
+      return;
+    }
 
-      try {
-        const response =
-          await axios.get(
-            `${API_URL}/api/users`,
-            {
-              headers: {
-                "X-Igreja-Id":
-                  idIgreja,
-              },
-            }
-          );
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/users`,
+        {
+          headers: {
+            "X-Igreja-Id": idIgreja,
+          },
+        }
+      );
 
-        const usuarios =
-          Array.isArray(
-            response.data
-          )
-            ? response.data
-            : [];
+      const usuarios = Array.isArray(response.data)
+        ? response.data
+        : [];
 
-        setData(
-          usuarios
-        );
+      setData(usuarios);
 
-        const statusInicial =
-          usuarios.reduce(
-            (
-              acc,
-              user
-            ) => {
-              acc[
-                user._id
-              ] = true;
+      const statusInicial = usuarios.reduce(
+        (acc, user) => {
+          acc[user._id] = true;
+          return acc;
+        },
+        {}
+      );
 
-              return acc;
-            },
-            {}
-          );
+      setStatusMembros(statusInicial);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar usuários:",
+        error
+      );
 
-        setStatusMembros(
-          statusInicial
-        );
-      } catch (error) {
-        console.error(
-          "Erro ao carregar usuários:",
-          error
-        );
+      toast({
+        title: "Erro ao carregar usuários",
+        description:
+          error.response?.data?.message ||
+          "Verifique se o servidor está funcionando.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
 
-        toast({
-          title:
-            "Erro ao carregar usuários",
-
-          description:
-            error.response
-              ?.data
-              ?.message ||
-            "Verifique se o servidor está funcionando.",
-
-          status:
-            "error",
-
-          duration:
-            5000,
-
-          isClosable:
-            true,
-        });
-
-        setData([]);
-        setStatusMembros({});
-      }
-    }, [
-      idIgreja,
-      toast,
-    ]);
+      setData([]);
+      setStatusMembros({});
+    }
+  }, [idIgreja, toast]);
 
   // =====================================================
-  // ATUALIZAR ID DA IGREJA
+  // ATUALIZAR ID DA IGREJA APÓS LOGIN
   // =====================================================
 
   useEffect(() => {
-    const atualizarIdIgreja =
-      () => {
-        const novoIdIgreja =
-          sessionStorage.getItem(
-            "idIgreja"
-          ) || "";
+    const atualizarIdIgreja = () => {
+      const novoIdIgreja =
+        sessionStorage.getItem("idIgreja") || "";
 
-        if (
-          novoIdIgreja !==
-          idIgreja
-        ) {
-          setIdIgreja(
-            novoIdIgreja
-          );
-        }
-      };
+      console.log(
+        "ID da igreja atualizado:",
+        novoIdIgreja
+      );
 
+      setIdIgreja(novoIdIgreja);
+    };
+
+    // Evento disparado pelo login
+    window.addEventListener(
+      "igrejaLogada",
+      atualizarIdIgreja
+    );
+
+    // Atualiza quando a janela volta ao foco
     window.addEventListener(
       "focus",
       atualizarIdIgreja
@@ -211,120 +166,94 @@ const App = () => {
 
     return () => {
       window.removeEventListener(
+        "igrejaLogada",
+        atualizarIdIgreja
+      );
+
+      window.removeEventListener(
         "focus",
         atualizarIdIgreja
       );
     };
-  }, [idIgreja]);
+  }, []);
 
   // =====================================================
-  // RECARREGAR MEMBROS
+  // RECARREGAR MEMBROS QUANDO O ID DA IGREJA MUDAR
   // =====================================================
 
   useEffect(() => {
     if (idIgreja) {
       loadUsers();
+    } else {
+      setData([]);
+      setStatusMembros({});
     }
-  }, [
-    idIgreja,
-    loadUsers,
-  ]);
+  }, [idIgreja, loadUsers]);
 
   // =====================================================
   // EXCLUIR MEMBRO
   // =====================================================
 
-  const excluirMembro =
-    async (
-      membroId
-    ) => {
-      const confirmar =
-        window.confirm(
-          "Tem certeza que deseja excluir este usuário?"
-        );
+  const excluirMembro = async (membroId) => {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja excluir este usuário?"
+    );
 
-      if (!confirmar) {
-        return;
-      }
+    if (!confirmar) {
+      return;
+    }
 
-      try {
-        await axios.delete(
-          `${API_URL}/api/users/${membroId}`,
-          {
-            headers: {
-              "X-Igreja-Id":
-                idIgreja,
-            },
-          }
-        );
+    try {
+      await axios.delete(
+        `${API_URL}/api/users/${membroId}`,
+        {
+          headers: {
+            "X-Igreja-Id": idIgreja,
+          },
+        }
+      );
 
-        toast({
-          title:
-            "Membro excluído",
+      toast({
+        title: "Membro excluído",
+        description:
+          "O membro foi excluído com sucesso.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
 
-          description:
-            "O membro foi excluído com sucesso.",
+      await loadUsers();
+    } catch (error) {
+      console.error(
+        "Erro ao excluir membro:",
+        error
+      );
 
-          status:
-            "success",
-
-          duration:
-            3000,
-
-          isClosable:
-            true,
-        });
-
-        await loadUsers();
-      } catch (error) {
-        console.error(
-          "Erro ao excluir membro:",
-          error
-        );
-
-        toast({
-          title:
-            "Erro ao excluir membro",
-
-          description:
-            error.response
-              ?.data
-              ?.message ||
-            "Não foi possível excluir o membro.",
-
-          status:
-            "error",
-
-          duration:
-            5000,
-
-          isClosable:
-            true,
-        });
-      }
-    };
+      toast({
+        title: "Erro ao excluir membro",
+        description:
+          error.response?.data?.message ||
+          "Não foi possível excluir o membro.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
 
   // =====================================================
   // FILTRAR MEMBROS
   // =====================================================
 
-  const membrosFiltrados =
-    data.filter(
-      (user) => {
-        if (
-          typeof user.nome !==
-          "string"
-        ) {
-          return false;
-        }
+  const membrosFiltrados = data.filter((user) => {
+    if (typeof user.nome !== "string") {
+      return false;
+    }
 
-        return user.nome
-          .toLowerCase()
-          .includes(
-            search.toLowerCase()
-          );
-      }
-    );
+    return user.nome
+      .toLowerCase()
+      .includes(search.toLowerCase());
+  });
 
   // =====================================================
   // ROTAS
@@ -332,9 +261,10 @@ const App = () => {
 
   return (
     <Routes>
-      {/* ============================================== */}
+
+      {/* ================================================= */}
       {/* ROTA INICIAL */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/"
@@ -353,9 +283,9 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* AUTENTICAÇÃO */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/cadastro-igreja"
@@ -385,17 +315,16 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* DASHBOARD */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/dashboard"
         element={
           idIgreja ? (
-            <Flex
-              minH="100vh"
-            >
+            <Flex minH="100vh">
+
               <Sidebar />
 
               <Flex
@@ -404,6 +333,7 @@ const App = () => {
                 align="center"
                 bg="gray.100"
               >
+
                 {/* FRASE BÍBLICA */}
 
                 <Box
@@ -418,16 +348,9 @@ const App = () => {
                     fontWeight="bold"
                     fontStyle="italic"
                   >
-                    Mateus
-                    11:28 –
-                    “Vinde a
-                    mim, todos
-                    os que
-                    estais
-                    cansados e
-                    oprimidos,
-                    e eu vos
-                    aliviarei.”
+                    Mateus 11:28 – “Vinde a mim,
+                    todos os que estais cansados e
+                    oprimidos, e eu vos aliviarei.”
                   </Text>
                 </Box>
 
@@ -439,151 +362,135 @@ const App = () => {
                   py={4}
                   textAlign="center"
                 >
-                  <Heading
-                    color="white"
-                  >
-                    MEMBRO
-                    CELESTIAL
+                  <Heading color="white">
+                    MEMBRO CELESTIAL
                   </Heading>
                 </Box>
 
                 {/* LISTA DE MEMBROS */}
 
                 <Box
-                  w="80%"
+                  w={{
+                    base: "95%",
+                    md: "90%",
+                    lg: "80%",
+                  }}
                   my={6}
                   p={4}
                   bg="white"
                   borderRadius="md"
                   boxShadow="lg"
                 >
+
                   <Flex
                     justify="space-between"
                     align="center"
                     gap={4}
                     mb={4}
                     direction={{
-                      base:
-                        "column",
-                      md:
-                        "row",
+                      base: "column",
+                      md: "row",
                     }}
                   >
+
                     <Button
-                      leftIcon={
-                        <AddIcon />
-                      }
+                      leftIcon={<AddIcon />}
                       colorScheme="blue"
                       onClick={() => {
-                        setDataEdit(
-                          {}
-                        );
-
+                        setDataEdit({});
                         onOpen();
                       }}
+                      w={{
+                        base: "100%",
+                        md: "auto",
+                      }}
                     >
-                      Criar
-                      novo
-                      Membro
+                      Criar novo Membro
                     </Button>
 
                     <InputGroup
                       width={{
-                        base:
-                          "100%",
-                        md:
-                          "300px",
+                        base: "100%",
+                        md: "300px",
                       }}
                     >
-                      <InputLeftElement
-                        pointerEvents="none"
-                      >
-                        <SearchIcon
-                          color="black"
-                        />
+
+                      <InputLeftElement pointerEvents="none">
+                        <SearchIcon color="black" />
                       </InputLeftElement>
 
                       <Input
                         placeholder="Pesquisar Membro"
-                        value={
-                          search
-                        }
-                        onChange={(
-                          event
-                        ) =>
+                        value={search}
+                        onChange={(event) =>
                           setSearch(
-                            event
-                              .target
-                              .value
+                            event.target.value
                           )
                         }
                       />
+
                     </InputGroup>
+
                   </Flex>
 
                   <Grid
                     templateColumns={{
-                      base:
-                        "1fr",
-                      md:
-                        "repeat(2, 1fr)",
-                      lg:
-                        "repeat(3, 1fr)",
+                      base: "1fr",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(3, 1fr)",
                     }}
                     gap={4}
                   >
+
                     {membrosFiltrados.map(
                       ({
                         _id,
                         nome,
                       }) => (
+
                         <Box
-                          key={
-                            _id
-                          }
+                          key={_id}
                           p={4}
                           borderWidth="1px"
                           borderRadius="lg"
                           boxShadow="sm"
                         >
+
                           <Flex
                             justify="space-between"
                             align="center"
                             gap={3}
                             mb={3}
                           >
+
                             <Text
                               fontWeight="bold"
                               fontSize="lg"
                             >
-                              {
-                                nome
-                              }
+                              {nome}
                             </Text>
 
                             <Text
                               fontSize="sm"
                               fontWeight="bold"
                               color={
-                                statusMembros[
-                                  _id
-                                ]
+                                statusMembros[_id]
                                   ? "green.500"
                                   : "red.500"
                               }
                             >
-                              {statusMembros[
-                                _id
-                              ]
+                              {statusMembros[_id]
                                 ? "Ativo"
                                 : "Inativo"}
                             </Text>
+
                           </Flex>
 
                           <Flex
                             justify="space-between"
                             gap={3}
                           >
+
                             <Button
                               size="sm"
                               leftIcon={
@@ -591,11 +498,10 @@ const App = () => {
                               }
                               colorScheme="yellow"
                               onClick={() => {
+
                                 const membroSelecionado =
                                   data.find(
-                                    (
-                                      user
-                                    ) =>
+                                    (user) =>
                                       user._id ===
                                       _id
                                   );
@@ -606,6 +512,7 @@ const App = () => {
                                 );
 
                                 onOpen();
+
                               }}
                             >
                               Editar
@@ -625,10 +532,14 @@ const App = () => {
                             >
                               Excluir
                             </Button>
+
                           </Flex>
+
                         </Box>
+
                       )
                     )}
+
                   </Grid>
 
                   {membrosFiltrados.length ===
@@ -641,18 +552,21 @@ const App = () => {
                         color="gray.500"
                         fontWeight="bold"
                       >
-                        Nenhum
-                        membro
-                        encontrado.
+                        Nenhum membro encontrado.
                       </Text>
                     </Box>
                   )}
+
                 </Box>
 
                 {/* AVISOS */}
 
                 <Box
-                  w="80%"
+                  w={{
+                    base: "95%",
+                    md: "90%",
+                    lg: "80%",
+                  }}
                   my={6}
                 >
                   <Avisos />
@@ -661,29 +575,20 @@ const App = () => {
                 {/* MODAL */}
 
                 <ModalComp
-                  isOpen={
-                    isOpen
-                  }
-                  onClose={
-                    onClose
-                  }
-                  dataEdit={
-                    dataEdit
-                  }
-                  loadUsers={
-                    loadUsers
-                  }
-                  setData={
-                    setData
-                  }
-                  data={
-                    data
-                  }
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  dataEdit={dataEdit}
+                  loadUsers={loadUsers}
+                  setData={setData}
+                  data={data}
                 />
 
                 <SupportButton />
+
               </Flex>
+
             </Flex>
+
           ) : (
             <Navigate
               to="/cadastro-igreja"
@@ -693,17 +598,16 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* DÍZIMOS */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/dizimos"
         element={
           idIgreja ? (
-            <Flex
-              minH="100vh"
-            >
+            <Flex minH="100vh">
+
               <Sidebar />
 
               <Flex
@@ -713,6 +617,7 @@ const App = () => {
               >
                 <Dizimos />
               </Flex>
+
             </Flex>
           ) : (
             <Navigate
@@ -723,17 +628,16 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* EVENTOS */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/eventos"
         element={
           idIgreja ? (
-            <Flex
-              minH="100vh"
-            >
+            <Flex minH="100vh">
+
               <Sidebar />
 
               <Flex
@@ -744,6 +648,7 @@ const App = () => {
               >
                 <Eventos />
               </Flex>
+
             </Flex>
           ) : (
             <Navigate
@@ -754,17 +659,16 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* BATISMO */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/batismo"
         element={
           idIgreja ? (
-            <Flex
-              minH="100vh"
-            >
+            <Flex minH="100vh">
+
               <Sidebar />
 
               <Flex
@@ -774,6 +678,7 @@ const App = () => {
               >
                 <Batizados />
               </Flex>
+
             </Flex>
           ) : (
             <Navigate
@@ -784,17 +689,16 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* CARTAS E CARTÕES */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="/cartas-cartoes"
         element={
           idIgreja ? (
-            <Flex
-              minH="100vh"
-            >
+            <Flex minH="100vh">
+
               <Sidebar />
 
               <Flex
@@ -805,6 +709,7 @@ const App = () => {
               >
                 <CartasCartoes />
               </Flex>
+
             </Flex>
           ) : (
             <Navigate
@@ -815,17 +720,16 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
-      {/* CONFIGURAÇÕES DA IGREJA */}
-      {/* ============================================== */}
+      {/* ================================================= */}
+      {/* CONFIGURAÇÕES */}
+      {/* ================================================= */}
 
       <Route
         path="/configuracoes"
         element={
           idIgreja ? (
-            <Flex
-              minH="100vh"
-            >
+            <Flex minH="100vh">
+
               <Sidebar />
 
               <Flex
@@ -836,6 +740,7 @@ const App = () => {
               >
                 <Configuracoes />
               </Flex>
+
             </Flex>
           ) : (
             <Navigate
@@ -846,9 +751,9 @@ const App = () => {
         }
       />
 
-      {/* ============================================== */}
+      {/* ================================================= */}
       {/* ROTA INEXISTENTE */}
-      {/* ============================================== */}
+      {/* ================================================= */}
 
       <Route
         path="*"
@@ -863,6 +768,7 @@ const App = () => {
           />
         }
       />
+
     </Routes>
   );
 };
