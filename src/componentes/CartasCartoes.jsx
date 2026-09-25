@@ -182,6 +182,10 @@ const CartasCartoes = () => {
   const idIgreja =
     sessionStorage.getItem("idIgreja") || "";
 
+  // =====================================================
+  // CARREGAR MEMBROS
+  // =====================================================
+
   const carregarMembros = useCallback(
     async () => {
       if (!idIgreja) {
@@ -216,7 +220,8 @@ const CartasCartoes = () => {
         setMembros([]);
 
         toast({
-          title: "Erro ao carregar membros",
+          title:
+            "Erro ao carregar membros",
           description:
             error.response?.data?.message ||
             "Não foi possível carregar os membros da igreja.",
@@ -235,6 +240,10 @@ const CartasCartoes = () => {
     carregarMembros();
   }, [carregarMembros]);
 
+  // =====================================================
+  // FILTRAR MEMBROS
+  // =====================================================
+
   const membrosFiltrados = useMemo(() => {
     const termo = normalizarTexto(busca);
 
@@ -242,10 +251,8 @@ const CartasCartoes = () => {
       return membros;
     }
 
-    const termoNumerico = termo.replace(
-      /\D/g,
-      ""
-    );
+    const termoNumerico =
+      termo.replace(/\D/g, "");
 
     return membros.filter((membro) => {
       const nome = normalizarTexto(
@@ -282,6 +289,10 @@ const CartasCartoes = () => {
     });
   }, [membros, busca]);
 
+  // =====================================================
+  // LIMPAR MODAL
+  // =====================================================
+
   const limparDadosModal = () => {
     setMembroSelecionado(null);
     setModeloSelecionado("modelo1");
@@ -289,6 +300,10 @@ const CartasCartoes = () => {
     setIgrejaDestino("");
     setCidadeDestino("");
   };
+
+  // =====================================================
+  // ABRIR MODELOS
+  // =====================================================
 
   const abrirModelosCarta = (membro) => {
     setMembroSelecionado(membro);
@@ -299,6 +314,10 @@ const CartasCartoes = () => {
     onOpen();
   };
 
+  // =====================================================
+  // FECHAR MODAL
+  // =====================================================
+
   const fecharModal = () => {
     if (gerandoDocumento) {
       return;
@@ -307,6 +326,10 @@ const CartasCartoes = () => {
     limparDadosModal();
     onClose();
   };
+
+  // =====================================================
+  // GERAR CARTA
+  // =====================================================
 
   const gerarCarta = async () => {
     if (!membroSelecionado?._id) {
@@ -324,7 +347,8 @@ const CartasCartoes = () => {
 
     if (!tipoCarta) {
       toast({
-        title: "Tipo de carta não selecionado",
+        title:
+          "Tipo de carta não selecionado",
         description:
           "Escolha o tipo de carta.",
         status: "warning",
@@ -365,7 +389,8 @@ const CartasCartoes = () => {
 
     if (!modeloSelecionado) {
       toast({
-        title: "Modelo não selecionado",
+        title:
+          "Modelo não selecionado",
         description:
           "Escolha um modelo de carta.",
         status: "warning",
@@ -383,7 +408,9 @@ const CartasCartoes = () => {
       `${tipoCarta}-${membroId}-${modeloSelecionado}`;
 
     try {
-      setGerandoDocumento(identificador);
+      setGerandoDocumento(
+        identificador
+      );
 
       const response = await axios.get(
         `${API_URL}/api/users/${membroId}/carta/${modeloSelecionado}`,
@@ -405,8 +432,9 @@ const CartasCartoes = () => {
       );
 
       const contentType =
-        response.headers["content-type"] ||
-        "";
+        response.headers[
+          "content-type"
+        ] || "";
 
       if (
         !contentType.includes(
@@ -430,25 +458,32 @@ const CartasCartoes = () => {
       );
 
       const url =
-        window.URL.createObjectURL(arquivo);
+        window.URL.createObjectURL(
+          arquivo
+        );
 
       const link =
         document.createElement("a");
 
-      const nomeMembro = limparNomeArquivo(
-        membroSelecionado.nome
-      );
+      const nomeMembro =
+        limparNomeArquivo(
+          membroSelecionado.nome
+        );
 
       link.href = url;
+
       link.download =
         `${tipoCarta}-${nomeMembro}-${modeloSelecionado}.pdf`;
 
       document.body.appendChild(link);
 
       link.click();
+
       link.remove();
 
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(
+        url
+      );
 
       toast({
         title: "Carta gerada",
@@ -490,8 +525,13 @@ const CartasCartoes = () => {
 
   const tipoAtual =
     TIPOS_CARTA.find(
-      (tipo) => tipo.id === tipoCarta
+      (tipo) =>
+        tipo.id === tipoCarta
     ) || TIPOS_CARTA[0];
+
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <>
@@ -499,15 +539,27 @@ const CartasCartoes = () => {
         w="100%"
         maxW="1200px"
         mx="auto"
-        p={{
+        px={{
+          base: 3,
+          sm: 4,
+          md: 6,
+          lg: 8,
+        }}
+        py={{
           base: 4,
-          md: 8,
+          md: 6,
+          lg: 8,
         }}
       >
+
+        {/* ================================================= */}
+        {/* CABEÇALHO */}
+        {/* ================================================= */}
+
         <Flex
           justify="space-between"
           align={{
-            base: "flex-start",
+            base: "stretch",
             md: "center",
           }}
           direction={{
@@ -517,21 +569,38 @@ const CartasCartoes = () => {
           gap={4}
           mb={6}
         >
+
           <Box>
             <Heading
               mb={2}
               color="blue.600"
+              fontSize={{
+                base: "2xl",
+                sm: "3xl",
+                md: "4xl",
+              }}
+              lineHeight="1.2"
             >
               Cartas e cartões
             </Heading>
 
-            <Text color="gray.600">
+            <Text
+              color="gray.600"
+              fontSize={{
+                base: "sm",
+                md: "md",
+              }}
+            >
               Pesquise um membro e escolha
               o documento que deseja gerar.
             </Text>
           </Box>
 
           <Badge
+            alignSelf={{
+              base: "flex-start",
+              md: "center",
+            }}
             colorScheme="blue"
             fontSize="sm"
             px={3}
@@ -543,33 +612,55 @@ const CartasCartoes = () => {
               ? "membro"
               : "membros"}
           </Badge>
+
         </Flex>
 
+        {/* ================================================= */}
+        {/* PESQUISA */}
+        {/* ================================================= */}
+
         <InputGroup
-          maxW="600px"
+          w="100%"
+          maxW="650px"
           mb={6}
         >
           <InputLeftElement
             pointerEvents="none"
           >
-            <SearchIcon color="gray.500" />
+            <SearchIcon
+              color="gray.500"
+            />
           </InputLeftElement>
 
           <Input
             bg="white"
+            h={{
+              base: "46px",
+              md: "44px",
+            }}
+            pl={10}
             placeholder="Buscar por nome, CPF ou número de membro"
             value={busca}
             onChange={(event) =>
-              setBusca(event.target.value)
+              setBusca(
+                event.target.value
+              )
             }
           />
         </InputGroup>
+
+        {/* ================================================= */}
+        {/* CARREGANDO */}
+        {/* ================================================= */}
 
         {carregando ? (
           <Flex
             justify="center"
             align="center"
-            minH="200px"
+            minH={{
+              base: "180px",
+              md: "250px",
+            }}
           >
             <Spinner
               size="xl"
@@ -578,39 +669,68 @@ const CartasCartoes = () => {
           </Flex>
         ) : membrosFiltrados.length ===
           0 ? (
+
+          /* ================================================= */
+          /* NENHUM MEMBRO */
+          /* ================================================= */
+
           <Box
             bg="white"
             borderWidth="1px"
             borderRadius="lg"
-            p={8}
+            p={{
+              base: 6,
+              md: 8,
+            }}
             textAlign="center"
           >
-            <Text fontWeight="bold">
+            <Text
+              fontWeight="bold"
+              fontSize={{
+                base: "sm",
+                md: "md",
+              }}
+            >
               Nenhum membro encontrado.
             </Text>
           </Box>
+
         ) : (
+
+          /* ================================================= */
+          /* LISTA DE MEMBROS */
+          /* ================================================= */
+
           <Grid
             templateColumns={{
               base: "1fr",
               lg: "repeat(2, 1fr)",
             }}
-            gap={4}
+            gap={{
+              base: 3,
+              md: 4,
+            }}
           >
+
             {membrosFiltrados.map(
               (membro) => (
+
                 <Box
                   key={membro._id}
                   bg="white"
                   borderWidth="1px"
                   borderRadius="lg"
                   boxShadow="sm"
-                  p={5}
+                  p={{
+                    base: 4,
+                    md: 5,
+                  }}
                 >
+
                   <Flex
                     justify="space-between"
                     align={{
-                      base: "flex-start",
+                      base: "stretch",
                       sm: "center",
                     }}
                     direction={{
@@ -619,10 +739,20 @@ const CartasCartoes = () => {
                     }}
                     gap={4}
                   >
-                    <Box>
+
+                    {/* DADOS DO MEMBRO */}
+
+                    <Box
+                      minW={0}
+                      flex="1"
+                    >
                       <Text
-                        fontSize="lg"
+                        fontSize={{
+                          base: "md",
+                          md: "lg",
+                        }}
                         fontWeight="bold"
+                        wordBreak="break-word"
                       >
                         {membro.nome}
                       </Text>
@@ -630,13 +760,16 @@ const CartasCartoes = () => {
                       <Text
                         fontSize="sm"
                         color={
-                          membro.ativo === false
+                          membro.ativo ===
+                          false
                             ? "red.600"
                             : "green.600"
                         }
                         fontWeight="bold"
+                        mt={1}
                       >
-                        {membro.ativo === false
+                        {membro.ativo ===
+                        false
                           ? "Inativo"
                           : "Ativo"}
                       </Text>
@@ -646,15 +779,33 @@ const CartasCartoes = () => {
                           fontSize="sm"
                           color="gray.600"
                           mt={1}
+                          wordBreak="break-word"
                         >
-                          CPF: {membro.cpf}
+                          CPF:{" "}
+                          {membro.cpf}
                         </Text>
                       )}
                     </Box>
 
-                    <Flex gap={2}>
+                    {/* BOTÕES */}
+
+                    <Flex
+                      gap={2}
+                      w={{
+                        base: "100%",
+                        sm: "auto",
+                      }}
+                      direction={{
+                        base: "column",
+                        sm: "row",
+                      }}
+                    >
+
                       <Button
-                        size="sm"
+                        size={{
+                          base: "md",
+                          sm: "sm",
+                        }}
                         colorScheme="blue"
                         leftIcon={
                           <FaFilePdf />
@@ -664,44 +815,97 @@ const CartasCartoes = () => {
                             membro
                           )
                         }
+                        w={{
+                          base: "100%",
+                          sm: "auto",
+                        }}
                       >
                         Gerar carta
                       </Button>
 
                       <Button
-                        size="sm"
+                        size={{
+                          base: "md",
+                          sm: "sm",
+                        }}
                         colorScheme="yellow"
                         leftIcon={
                           <FaAddressCard />
                         }
                         isDisabled
+                        w={{
+                          base: "100%",
+                          sm: "auto",
+                        }}
                       >
                         Gerar cartão
                       </Button>
+
                     </Flex>
+
                   </Flex>
+
                 </Box>
+
               )
             )}
+
           </Grid>
+
         )}
+
       </Box>
+
+      {/* ================================================= */}
+      {/* MODAL */}
+      {/* ================================================= */}
 
       <Modal
         isOpen={isOpen}
         onClose={fecharModal}
-        size="4xl"
+        size={{
+          base: "full",
+          md: "4xl",
+        }}
         isCentered
         scrollBehavior="inside"
         closeOnOverlayClick={
           !cartaSendoGerada
         }
-        closeOnEsc={!cartaSendoGerada}
+        closeOnEsc={
+          !cartaSendoGerada
+        }
       >
+
         <ModalOverlay />
 
-        <ModalContent>
-          <ModalHeader>
+        <ModalContent
+          mx={{
+            base: 0,
+            sm: 2,
+            md: 4,
+          }}
+          my={{
+            base: 0,
+            md: 6,
+          }}
+          borderRadius={{
+            base: 0,
+            sm: "lg",
+          }}
+          maxH={{
+            base: "100vh",
+            md: "90vh",
+          }}
+        >
+
+          <ModalHeader
+            fontSize={{
+              base: "lg",
+              md: "xl",
+            }}
+            pr={12}
+          >
             Gerar documento
           </ModalHeader>
 
@@ -709,12 +913,25 @@ const CartasCartoes = () => {
             <ModalCloseButton />
           )}
 
-          <ModalBody>
+          <ModalBody
+            px={{
+              base: 4,
+              sm: 5,
+              md: 6,
+            }}
+            pb={6}
+          >
+
+            {/* MEMBRO SELECIONADO */}
+
             {membroSelecionado && (
               <Box
                 bg="blue.50"
                 borderRadius="md"
-                p={4}
+                p={{
+                  base: 3,
+                  md: 4,
+                }}
                 mb={5}
               >
                 <Text
@@ -725,17 +942,29 @@ const CartasCartoes = () => {
                 </Text>
 
                 <Text
-                  fontSize="lg"
+                  fontSize={{
+                    base: "md",
+                    md: "lg",
+                  }}
                   fontWeight="bold"
                   color="blue.700"
+                  wordBreak="break-word"
                 >
-                  {membroSelecionado.nome}
+                  {
+                    membroSelecionado.nome
+                  }
                 </Text>
               </Box>
             )}
 
+            {/* ================================================= */}
+            {/* TIPO DE CARTA */}
+            {/* ================================================= */}
+
             <FormControl mb={6}>
-              <FormLabel>
+              <FormLabel
+                fontWeight="bold"
+              >
                 Tipo de carta
               </FormLabel>
 
@@ -744,76 +973,103 @@ const CartasCartoes = () => {
                   base: "1fr",
                   md: "repeat(2, 1fr)",
                 }}
-                gap={4}
+                gap={3}
               >
-                {TIPOS_CARTA.map((tipo) => {
-                  const selecionado =
-                    tipoCarta === tipo.id;
 
-                  return (
-                    <Box
-                      key={tipo.id}
-                      borderWidth="2px"
-                      borderColor={
-                        selecionado
-                          ? "blue.500"
-                          : "gray.200"
-                      }
-                      bg={
-                        selecionado
-                          ? "blue.50"
-                          : "white"
-                      }
-                      borderRadius="lg"
-                      p={4}
-                      cursor={
-                        cartaSendoGerada
-                          ? "not-allowed"
-                          : "pointer"
-                      }
-                      position="relative"
-                      onClick={() => {
-                        if (
-                          !cartaSendoGerada
-                        ) {
-                          setTipoCarta(
-                            tipo.id
-                          );
+                {TIPOS_CARTA.map(
+                  (tipo) => {
+
+                    const selecionado =
+                      tipoCarta ===
+                      tipo.id;
+
+                    return (
+                      <Box
+                        key={tipo.id}
+                        borderWidth="2px"
+                        borderColor={
+                          selecionado
+                            ? "blue.500"
+                            : "gray.200"
                         }
-                      }}
-                    >
-                      {selecionado && (
-                        <Box
-                          position="absolute"
-                          top={3}
-                          right={3}
-                          color="blue.500"
+                        bg={
+                          selecionado
+                            ? "blue.50"
+                            : "white"
+                        }
+                        borderRadius="lg"
+                        p={{
+                          base: 4,
+                          md: 5,
+                        }}
+                        cursor={
+                          cartaSendoGerada
+                            ? "not-allowed"
+                            : "pointer"
+                        }
+                        position="relative"
+                        minH={{
+                          base: "auto",
+                          md: "150px",
+                        }}
+                        onClick={() => {
+                          if (
+                            !cartaSendoGerada
+                          ) {
+                            setTipoCarta(
+                              tipo.id
+                            );
+                          }
+                        }}
+                        _hover={{
+                          borderColor:
+                            cartaSendoGerada
+                              ? undefined
+                              : "blue.300",
+                        }}
+                      >
+
+                        {selecionado && (
+                          <Box
+                            position="absolute"
+                            top={3}
+                            right={3}
+                            color="blue.500"
+                          >
+                            <FaCheckCircle
+                              size={20}
+                            />
+                          </Box>
+                        )}
+
+                        <Text
+                          fontWeight="bold"
+                          mb={2}
+                          pr={8}
                         >
-                          <FaCheckCircle
-                            size={20}
-                          />
-                        </Box>
-                      )}
+                          {tipo.nome}
+                        </Text>
 
-                      <Text
-                        fontWeight="bold"
-                        mb={2}
-                      >
-                        {tipo.nome}
-                      </Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          pr={5}
+                          lineHeight="1.5"
+                        >
+                          {tipo.descricao}
+                        </Text>
 
-                      <Text
-                        fontSize="sm"
-                        color="gray.600"
-                        pr={5}
-                      >
-                        {tipo.descricao}
-                      </Text>
-                    </Box>
-                  );
-                })}
+                      </Box>
+                    );
+                  }
+                )}
+
               </Grid>
             </FormControl>
+
+            {/* ================================================= */}
+            {/* DESTINO */}
+            {/* ================================================= */}
 
             <Grid
               templateColumns={{
@@ -823,12 +1079,16 @@ const CartasCartoes = () => {
               gap={4}
               mb={6}
             >
-              <FormControl isRequired>
+
+              <FormControl
+                isRequired
+              >
                 <FormLabel>
                   Igreja de destino
                 </FormLabel>
 
                 <Input
+                  h="46px"
                   placeholder="Ex.: Assembleia de Deus Ministério Moriáh"
                   value={igrejaDestino}
                   onChange={(event) =>
@@ -842,12 +1102,15 @@ const CartasCartoes = () => {
                 />
               </FormControl>
 
-              <FormControl isRequired>
+              <FormControl
+                isRequired
+              >
                 <FormLabel>
                   Cidade e estado
                 </FormLabel>
 
                 <Input
+                  h="46px"
                   placeholder="Ex.: Peruíbe/SP"
                   value={cidadeDestino}
                   onChange={(event) =>
@@ -860,11 +1123,19 @@ const CartasCartoes = () => {
                   }
                 />
               </FormControl>
+
             </Grid>
+
+            {/* ================================================= */}
+            {/* MODELOS */}
+            {/* ================================================= */}
 
             <Text
               fontWeight="bold"
-              fontSize="lg"
+              fontSize={{
+                base: "md",
+                md: "lg",
+              }}
               mb={3}
             >
               Escolha o modelo visual
@@ -873,12 +1144,15 @@ const CartasCartoes = () => {
             <Grid
               templateColumns={{
                 base: "1fr",
+                sm: "repeat(2, 1fr)",
                 md: "repeat(3, 1fr)",
               }}
-              gap={4}
+              gap={3}
             >
+
               {MODELOS_CARTA.map(
                 (modelo) => {
+
                   const selecionado =
                     modeloSelecionado ===
                     modelo.id;
@@ -899,13 +1173,19 @@ const CartasCartoes = () => {
                           : "white"
                       }
                       borderRadius="lg"
-                      p={4}
+                      p={{
+                        base: 4,
+                        md: 4,
+                      }}
                       cursor={
                         cartaSendoGerada
                           ? "not-allowed"
                           : "pointer"
                       }
-                      minH="190px"
+                      minH={{
+                        base: "auto",
+                        md: "190px",
+                      }}
                       onClick={() => {
                         if (
                           !cartaSendoGerada
@@ -915,7 +1195,14 @@ const CartasCartoes = () => {
                           );
                         }
                       }}
+                      _hover={{
+                        borderColor:
+                          cartaSendoGerada
+                            ? undefined
+                            : "blue.300",
+                      }}
                     >
+
                       {selecionado && (
                         <Box
                           position="absolute"
@@ -932,7 +1219,10 @@ const CartasCartoes = () => {
                       <Flex
                         align="center"
                         justify="center"
-                        h="70px"
+                        h={{
+                          base: "65px",
+                          md: "70px",
+                        }}
                         mb={3}
                         borderRadius="md"
                         bg={
@@ -946,7 +1236,9 @@ const CartasCartoes = () => {
                         }
                         borderWidth="1px"
                       >
-                        <FaFilePdf size={32} />
+                        <FaFilePdf
+                          size={32}
+                        />
                       </Flex>
 
                       <Badge
@@ -955,12 +1247,15 @@ const CartasCartoes = () => {
                         }
                         mb={2}
                       >
-                        {modelo.destaque}
+                        {
+                          modelo.destaque
+                        }
                       </Badge>
 
                       <Text
                         fontWeight="bold"
                         mb={2}
+                        pr={5}
                       >
                         {modelo.nome}
                       </Text>
@@ -968,40 +1263,79 @@ const CartasCartoes = () => {
                       <Text
                         fontSize="sm"
                         color="gray.600"
+                        lineHeight="1.5"
                       >
-                        {modelo.descricao}
+                        {
+                          modelo.descricao
+                        }
                       </Text>
+
                     </Box>
                   );
                 }
               )}
+
             </Grid>
+
           </ModalBody>
 
-          <ModalFooter gap={3}>
+          {/* ================================================= */}
+          {/* RODAPÉ DO MODAL */}
+          {/* ================================================= */}
+
+          <ModalFooter
+            gap={2}
+            flexDirection={{
+              base: "column-reverse",
+              sm: "row",
+            }}
+            alignItems={{
+              base: "stretch",
+              sm: "center",
+            }}
+            px={{
+              base: 4,
+              sm: 6,
+            }}
+          >
+
             <Button
               variant="ghost"
               onClick={fecharModal}
               isDisabled={
                 cartaSendoGerada
               }
+              w={{
+                base: "100%",
+                sm: "auto",
+              }}
             >
               Cancelar
             </Button>
 
             <Button
               colorScheme="blue"
-              leftIcon={<FaFilePdf />}
+              leftIcon={
+                <FaFilePdf />
+              }
               onClick={gerarCarta}
               isLoading={
                 cartaSendoGerada
               }
               loadingText="Gerando carta"
+              w={{
+                base: "100%",
+                sm: "auto",
+              }}
             >
-              Gerar {tipoAtual.nome}
+              Gerar{" "}
+              {tipoAtual.nome}
             </Button>
+
           </ModalFooter>
+
         </ModalContent>
+
       </Modal>
     </>
   );

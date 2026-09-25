@@ -72,9 +72,10 @@ const Configuracoes = () => {
   const idIgreja =
     sessionStorage.getItem("idIgreja") || "";
 
-  /*
-   * Atualiza um campo simples.
-   */
+  // =====================================================
+  // ATUALIZAR CAMPO
+  // =====================================================
+
   const atualizarCampo = (
     campo,
     valor
@@ -85,10 +86,10 @@ const Configuracoes = () => {
     }));
   };
 
-  /*
-   * Carrega as configurações
-   * da igreja logada.
-   */
+  // =====================================================
+  // CARREGAR CONFIGURAÇÕES
+  // =====================================================
+
   const carregarConfiguracoes =
     useCallback(async () => {
       if (!idIgreja) {
@@ -103,8 +104,7 @@ const Configuracoes = () => {
           `${API_URL}/api/igreja/configuracoes`,
           {
             headers: {
-              "X-Igreja-Id":
-                idIgreja,
+              "X-Igreja-Id": idIgreja,
             },
           }
         );
@@ -115,43 +115,26 @@ const Configuracoes = () => {
           {};
 
         setDados({
-          nome:
-            igreja.nome || "",
-
-          email:
-            igreja.email || "",
-
+          nome: igreja.nome || "",
+          email: igreja.email || "",
           pastorPresidente:
-            igreja.pastorPresidente ||
-            "",
-
+            igreja.pastorPresidente || "",
           endereco:
             igreja.endereco || "",
-
           numero:
             igreja.numero || "",
-
           bairro:
             igreja.bairro || "",
-
           cidade:
             igreja.cidade || "",
-
-          uf:
-            igreja.uf || "",
-
-          cep:
-            igreja.cep || "",
-
+          uf: igreja.uf || "",
+          cep: igreja.cep || "",
           telefone:
             igreja.telefone || "",
-
           logoIgreja:
             igreja.logoIgreja || "",
-
           logoConvencao:
-            igreja.logoConvencao ||
-            "",
+            igreja.logoConvencao || "",
         });
       } catch (error) {
         console.error(
@@ -163,8 +146,7 @@ const Configuracoes = () => {
           title:
             "Erro ao carregar configurações",
           description:
-            error.response?.data
-              ?.message ||
+            error.response?.data?.message ||
             "Não foi possível carregar os dados da igreja.",
           status: "error",
           duration: 5000,
@@ -179,9 +161,10 @@ const Configuracoes = () => {
     carregarConfiguracoes();
   }, [carregarConfiguracoes]);
 
-  /*
-   * Converte arquivo para Base64.
-   */
+  // =====================================================
+  // ARQUIVO PARA BASE64
+  // =====================================================
+
   const arquivoParaBase64 = (
     arquivo
   ) => {
@@ -209,9 +192,10 @@ const Configuracoes = () => {
     );
   };
 
-  /*
-   * Processa a logo escolhida.
-   */
+  // =====================================================
+  // SELECIONAR IMAGEM
+  // =====================================================
+
   const selecionarImagem =
     async (event, campo) => {
       const arquivo =
@@ -248,13 +232,6 @@ const Configuracoes = () => {
         return;
       }
 
-      /*
-       * Máximo de 2 MB.
-       *
-       * Para a primeira versão,
-       * vamos salvar a imagem
-       * como Base64.
-       */
       const LIMITE =
         2 * 1024 * 1024;
 
@@ -306,9 +283,10 @@ const Configuracoes = () => {
       event.target.value = "";
     };
 
-  /*
-   * Remove uma logo.
-   */
+  // =====================================================
+  // REMOVER LOGO
+  // =====================================================
+
   const removerLogo = (campo) => {
     atualizarCampo(
       campo,
@@ -316,9 +294,10 @@ const Configuracoes = () => {
     );
   };
 
-  /*
-   * Salvar configurações.
-   */
+  // =====================================================
+  // SALVAR CONFIGURAÇÕES
+  // =====================================================
+
   const salvarConfiguracoes =
     async () => {
       if (!dados.nome.trim()) {
@@ -357,10 +336,9 @@ const Configuracoes = () => {
           cidade:
             dados.cidade.trim(),
 
-          uf:
-            dados.uf
-              .trim()
-              .toUpperCase(),
+          uf: dados.uf
+            .trim()
+            .toUpperCase(),
 
           cep:
             dados.cep.trim(),
@@ -368,14 +346,6 @@ const Configuracoes = () => {
           telefone:
             dados.telefone.trim(),
 
-          /*
-           * O e-mail já existe no
-           * cadastro da igreja.
-           *
-           * Vamos enviar também,
-           * mas o backend pode decidir
-           * se permite alterá-lo.
-           */
           email:
             dados.email.trim(),
 
@@ -439,8 +409,7 @@ const Configuracoes = () => {
           title:
             "Erro ao salvar configurações",
           description:
-            error.response?.data
-              ?.message ||
+            error.response?.data?.message ||
             "Não foi possível salvar os dados da igreja.",
           status: "error",
           duration: 5000,
@@ -451,9 +420,10 @@ const Configuracoes = () => {
       }
     };
 
-  /*
-   * Componente das logos.
-   */
+  // =====================================================
+  // BLOCO DAS LOGOS
+  // =====================================================
+
   const BlocoLogo = ({
     titulo,
     descricao,
@@ -465,27 +435,38 @@ const Configuracoes = () => {
     <Box
       borderWidth="1px"
       borderRadius="xl"
-      p={5}
+      p={{
+        base: 4,
+        sm: 5,
+        md: 6,
+      }}
       bg="white"
       boxShadow="sm"
-      flex="1"
+      w="100%"
     >
       <Flex
-        align="center"
+        align="flex-start"
         gap={3}
         mb={4}
       >
         <Box
           color="blue.500"
-          fontSize="22px"
+          fontSize={{
+            base: "20px",
+            md: "22px",
+          }}
+          flexShrink={0}
         >
           {icone}
         </Box>
 
-        <Box>
+        <Box minW={0}>
           <Text
             fontWeight="bold"
-            fontSize="lg"
+            fontSize={{
+              base: "md",
+              md: "lg",
+            }}
           >
             {titulo}
           </Text>
@@ -499,8 +480,13 @@ const Configuracoes = () => {
         </Box>
       </Flex>
 
+      {/* PREVIEW DA LOGO */}
+
       <Flex
-        minH="170px"
+        minH={{
+          base: "150px",
+          sm: "170px",
+        }}
         align="center"
         justify="center"
         bg="gray.50"
@@ -510,12 +496,16 @@ const Configuracoes = () => {
         borderRadius="lg"
         p={4}
         mb={4}
+        w="100%"
       >
         {valor ? (
           <Image
             src={valor}
             alt={titulo}
-            maxW="210px"
+            maxW={{
+              base: "180px",
+              sm: "210px",
+            }}
             maxH="140px"
             objectFit="contain"
           />
@@ -525,7 +515,9 @@ const Configuracoes = () => {
             spacing={2}
             color="gray.400"
           >
-            <FaImage size={42} />
+            <FaImage
+              size={40}
+            />
 
             <Text
               fontSize="sm"
@@ -537,6 +529,8 @@ const Configuracoes = () => {
           </Stack>
         )}
       </Flex>
+
+      {/* INPUT ESCONDIDO */}
 
       <Input
         ref={inputRef}
@@ -551,9 +545,15 @@ const Configuracoes = () => {
         }
       />
 
+      {/* BOTÕES */}
+
       <Flex
         gap={2}
-        wrap="wrap"
+        direction={{
+          base: "column",
+          sm: "row",
+        }}
+        w="100%"
       >
         <Button
           size="sm"
@@ -564,6 +564,10 @@ const Configuracoes = () => {
           onClick={() =>
             inputRef.current?.click()
           }
+          w={{
+            base: "100%",
+            sm: "auto",
+          }}
         >
           {valor
             ? "Trocar imagem"
@@ -581,6 +585,10 @@ const Configuracoes = () => {
             onClick={() =>
               removerLogo(campo)
             }
+            w={{
+              base: "100%",
+              sm: "auto",
+            }}
           >
             Remover
           </Button>
@@ -598,6 +606,10 @@ const Configuracoes = () => {
     </Box>
   );
 
+  // =====================================================
+  // CARREGANDO
+  // =====================================================
+
   if (carregando) {
     return (
       <Flex
@@ -605,10 +617,12 @@ const Configuracoes = () => {
         minH="100vh"
         align="center"
         justify="center"
+        px={4}
       >
         <Stack
           align="center"
           spacing={4}
+          textAlign="center"
         >
           <Spinner
             size="xl"
@@ -624,22 +638,36 @@ const Configuracoes = () => {
     );
   }
 
+  // =====================================================
+  // RENDER
+  // =====================================================
+
   return (
     <Box
       w="100%"
       maxW="1200px"
       mx="auto"
-      p={{
+      px={{
+        base: 3,
+        sm: 4,
+        md: 6,
+        lg: 8,
+      }}
+      py={{
         base: 4,
-        md: 8,
+        md: 6,
+        lg: 8,
       }}
     >
+
+      {/* ================================================= */}
       {/* CABEÇALHO */}
+      {/* ================================================= */}
 
       <Flex
         justify="space-between"
         align={{
-          base: "flex-start",
+          base: "stretch",
           md: "center",
         }}
         direction={{
@@ -647,7 +675,10 @@ const Configuracoes = () => {
           md: "row",
         }}
         gap={4}
-        mb={8}
+        mb={{
+          base: 6,
+          md: 8,
+        }}
       >
         <Box>
           <Flex
@@ -657,14 +688,24 @@ const Configuracoes = () => {
           >
             <Box
               color="blue.500"
-              fontSize="28px"
+              fontSize={{
+                base: "22px",
+                md: "28px",
+              }}
+              flexShrink={0}
             >
               <FaChurch />
             </Box>
 
             <Heading
-              size="lg"
+              fontSize={{
+                base: "2xl",
+                sm: "3xl",
+                md: "xl",
+                lg: "2xl",
+              }}
               color="blue.600"
+              lineHeight="1.2"
             >
               Configurações da Igreja
             </Heading>
@@ -672,6 +713,10 @@ const Configuracoes = () => {
 
           <Text
             color="gray.600"
+            fontSize={{
+              base: "sm",
+              md: "md",
+            }}
             maxW="700px"
           >
             Configure os dados que serão
@@ -684,18 +729,28 @@ const Configuracoes = () => {
         <Button
           colorScheme="blue"
           leftIcon={<FaSave />}
-          size="lg"
+          size={{
+            base: "md",
+            md: "lg",
+          }}
           isLoading={salvando}
           loadingText="Salvando"
           onClick={
             salvarConfiguracoes
           }
+          w={{
+            base: "100%",
+            md: "auto",
+          }}
+          minH="46px"
         >
           Salvar alterações
         </Button>
       </Flex>
 
-      {/* LOGOS */}
+      {/* ================================================= */}
+      {/* IDENTIDADE VISUAL */}
+      {/* ================================================= */}
 
       <Heading
         size="md"
@@ -709,8 +764,14 @@ const Configuracoes = () => {
           base: "1fr",
           lg: "repeat(2, 1fr)",
         }}
-        gap={5}
-        mb={8}
+        gap={{
+          base: 4,
+          md: 5,
+        }}
+        mb={{
+          base: 6,
+          md: 8,
+        }}
       >
         <BlocoLogo
           titulo="Logo da Igreja"
@@ -737,7 +798,9 @@ const Configuracoes = () => {
         />
       </Grid>
 
-      {/* DADOS */}
+      {/* ================================================= */}
+      {/* DADOS DA IGREJA */}
+      {/* ================================================= */}
 
       <Box
         bg="white"
@@ -745,7 +808,8 @@ const Configuracoes = () => {
         borderRadius="xl"
         boxShadow="sm"
         p={{
-          base: 5,
+          base: 4,
+          sm: 5,
           md: 7,
         }}
       >
@@ -767,16 +831,27 @@ const Configuracoes = () => {
           sistema.
         </Text>
 
+        {/* ================================================= */}
+        {/* CAMPOS */}
+        {/* ================================================= */}
+
         <Grid
           templateColumns={{
             base: "1fr",
             md: "repeat(2, 1fr)",
           }}
-          gap={5}
+          gap={{
+            base: 4,
+            md: 5,
+          }}
         >
+
+          {/* NOME */}
+
           <FormControl
             isRequired
             gridColumn={{
+              base: "span 1",
               md: "span 2",
             }}
           >
@@ -785,6 +860,7 @@ const Configuracoes = () => {
             </FormLabel>
 
             <Input
+              h="46px"
               value={dados.nome}
               placeholder="Ex.: Igreja Evangélica Assembleia de Deus"
               onChange={(event) =>
@@ -796,12 +872,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* PASTOR */}
+
           <FormControl>
             <FormLabel>
               Pastor Presidente
             </FormLabel>
 
             <Input
+              h="46px"
               value={
                 dados.pastorPresidente
               }
@@ -815,12 +894,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* TELEFONE */}
+
           <FormControl>
             <FormLabel>
               Telefone
             </FormLabel>
 
             <Input
+              h="46px"
               value={
                 dados.telefone
               }
@@ -834,12 +916,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* ENDEREÇO */}
+
           <FormControl>
             <FormLabel>
               Endereço
             </FormLabel>
 
             <Input
+              h="46px"
               value={
                 dados.endereco
               }
@@ -853,12 +938,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* NÚMERO */}
+
           <FormControl>
             <FormLabel>
               Número
             </FormLabel>
 
             <Input
+              h="46px"
               value={dados.numero}
               placeholder="Ex.: 90"
               onChange={(event) =>
@@ -870,12 +958,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* BAIRRO */}
+
           <FormControl>
             <FormLabel>
               Bairro
             </FormLabel>
 
             <Input
+              h="46px"
               value={
                 dados.bairro
               }
@@ -889,12 +980,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* CEP */}
+
           <FormControl>
             <FormLabel>
               CEP
             </FormLabel>
 
             <Input
+              h="46px"
               value={dados.cep}
               placeholder="Ex.: 65165-000"
               onChange={(event) =>
@@ -906,12 +1000,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* CIDADE */}
+
           <FormControl>
             <FormLabel>
               Cidade
             </FormLabel>
 
             <Input
+              h="46px"
               value={
                 dados.cidade
               }
@@ -925,12 +1022,15 @@ const Configuracoes = () => {
             />
           </FormControl>
 
+          {/* UF */}
+
           <FormControl>
             <FormLabel>
               UF
             </FormLabel>
 
             <Input
+              h="46px"
               value={dados.uf}
               maxLength={2}
               placeholder="MA"
@@ -950,6 +1050,10 @@ const Configuracoes = () => {
           </FormControl>
         </Grid>
 
+        {/* ================================================= */}
+        {/* CONTATO */}
+        {/* ================================================= */}
+
         <Divider my={7} />
 
         <Heading
@@ -966,6 +1070,7 @@ const Configuracoes = () => {
 
           <Input
             type="email"
+            h="46px"
             value={dados.email}
             placeholder="igreja@email.com"
             onChange={(event) =>
@@ -980,6 +1085,7 @@ const Configuracoes = () => {
             fontSize="xs"
             color="gray.500"
             mt={2}
+            lineHeight="1.5"
           >
             Este é o e-mail cadastrado
             para a igreja. Depois podemos
@@ -989,7 +1095,9 @@ const Configuracoes = () => {
           </Text>
         </FormControl>
 
-        {/* PREVIEW */}
+        {/* ================================================= */}
+        {/* PRÉVIA */}
+        {/* ================================================= */}
 
         <Divider my={7} />
 
@@ -1004,26 +1112,43 @@ const Configuracoes = () => {
           bg="gray.50"
           borderWidth="1px"
           borderRadius="lg"
-          p={5}
+          p={{
+            base: 4,
+            md: 5,
+          }}
           align={{
-            base: "flex-start",
+            base: "center",
             md: "center",
           }}
           direction={{
             base: "column",
-            md: "row",
+            sm: "row",
           }}
           gap={5}
+          textAlign={{
+            base: "center",
+            sm: "left",
+          }}
         >
+
+          {/* LOGO */}
+
           {dados.logoIgreja ? (
             <Image
               src={
                 dados.logoIgreja
               }
               alt="Logo da igreja"
-              w="85px"
-              h="85px"
+              w={{
+                base: "75px",
+                md: "85px",
+              }}
+              h={{
+                base: "75px",
+                md: "85px",
+              }}
               objectFit="contain"
+              flexShrink={0}
             />
           ) : (
             <Avatar
@@ -1031,14 +1156,24 @@ const Configuracoes = () => {
               icon={<FaChurch />}
               bg="blue.100"
               color="blue.600"
+              flexShrink={0}
             />
           )}
 
-          <Box>
+          {/* DADOS DA PRÉVIA */}
+
+          <Box
+            minW={0}
+            w="100%"
+          >
             <Text
               fontWeight="bold"
-              fontSize="xl"
+              fontSize={{
+                base: "lg",
+                md: "xl",
+              }}
               color="gray.800"
+              wordBreak="break-word"
             >
               {dados.nome ||
                 "Nome da Igreja"}
@@ -1048,6 +1183,7 @@ const Configuracoes = () => {
               <Text
                 color="gray.600"
                 mt={1}
+                fontSize="sm"
               >
                 Presidente:{" "}
                 {
@@ -1059,6 +1195,8 @@ const Configuracoes = () => {
             <Text
               color="gray.600"
               mt={1}
+              fontSize="sm"
+              wordBreak="break-word"
             >
               {[
                 dados.endereco,
@@ -1069,7 +1207,10 @@ const Configuracoes = () => {
                 .join(", ")}
             </Text>
 
-            <Text color="gray.600">
+            <Text
+              color="gray.600"
+              fontSize="sm"
+            >
               {dados.cidade}
 
               {dados.cidade &&
@@ -1084,34 +1225,52 @@ const Configuracoes = () => {
               <Text
                 color="gray.600"
                 mt={1}
+                fontSize="sm"
               >
-                {
-                  dados.telefone
-                }
+                {dados.telefone}
               </Text>
             )}
 
             {dados.email && (
-              <Text color="gray.600">
+              <Text
+                color="gray.600"
+                fontSize="sm"
+                wordBreak="break-word"
+              >
                 {dados.email}
               </Text>
             )}
           </Box>
         </Flex>
 
+        {/* ================================================= */}
+        {/* BOTÃO FINAL */}
+        {/* ================================================= */}
+
         <Flex
-          justify="flex-end"
+          justify={{
+            base: "stretch",
+            sm: "flex-end",
+          }}
           mt={7}
         >
           <Button
             colorScheme="blue"
             leftIcon={<FaSave />}
-            size="lg"
+            size={{
+              base: "md",
+              md: "lg",
+            }}
             isLoading={salvando}
             loadingText="Salvando"
             onClick={
               salvarConfiguracoes
             }
+            w={{
+              base: "100%",
+              sm: "auto",
+            }}
+            minH="46px"
           >
             Salvar alterações
           </Button>
