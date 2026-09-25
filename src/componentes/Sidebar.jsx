@@ -12,6 +12,7 @@ import {
   DrawerContent,
   DrawerBody,
   Divider,
+  Flex,
 } from "@chakra-ui/react";
 
 import { HamburgerIcon } from "@chakra-ui/icons";
@@ -37,16 +38,18 @@ const Sidebar = () => {
 
   const navigate = useNavigate();
 
-  const toggleSidebar = () => {
-    setIsOpen(
-      (estadoAtual) => !estadoAtual
-    );
+  const fecharSidebar = () => {
+    setIsOpen(false);
   };
 
   const handleNavigation = (path) => {
     navigate(path);
-    setIsOpen(false);
+    fecharSidebar();
   };
+
+  // =====================================================
+  // ITEM DO MENU
+  // =====================================================
 
   const MenuItem = ({
     icon,
@@ -58,24 +61,44 @@ const Sidebar = () => {
       alignItems="center"
       gap={3}
       p={3}
+      minH="46px"
       borderRadius="md"
       cursor="pointer"
       textDecoration="none"
+      color="white"
       _hover={{
         bg: "blue.600",
         textDecoration: "none",
+      }}
+      _active={{
+        bg: "blue.700",
       }}
       onClick={() =>
         handleNavigation(path)
       }
     >
-      {icon}
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        minW="24px"
+      >
+        {icon}
+      </Box>
 
-      <Text fontSize="sm">
+      <Text
+        fontSize="sm"
+        fontWeight="medium"
+        noOfLines={1}
+      >
         {label}
       </Text>
     </Link>
   );
+
+  // =====================================================
+  // RODAPÉ
+  // =====================================================
 
   const renderFooter = () => (
     <Box
@@ -85,18 +108,14 @@ const Sidebar = () => {
     >
       <Divider
         borderColor="blue.300"
-        mb={2}
+        mb={3}
       />
 
       <Text
-        fontSize="sm"
+        fontSize="xs"
         color="whiteAlpha.900"
         fontStyle="italic"
-        letterSpacing="wide"
-        _hover={{
-          color: "white",
-          transition: "0.3s",
-        }}
+        lineHeight="1.5"
       >
         Desenvolvido por{" "}
         <strong>
@@ -107,19 +126,26 @@ const Sidebar = () => {
       <Text
         fontSize="xs"
         color="whiteAlpha.800"
-        mt={1}
+        mt={2}
       >
         Todos os direitos reservados © 2026
       </Text>
     </Box>
   );
 
+  // =====================================================
+  // MENU
+  // =====================================================
+
   const renderMenu = () => (
     <Stack
       spacing={1}
       flex="1"
+      overflowY="auto"
+      pr={1}
     >
       {/* INÍCIO */}
+
       <MenuItem
         icon={
           <MdDashboard size={20} />
@@ -129,6 +155,7 @@ const Sidebar = () => {
       />
 
       {/* MEMBROS */}
+
       <MenuItem
         icon={
           <FaUsers size={18} />
@@ -138,6 +165,7 @@ const Sidebar = () => {
       />
 
       {/* DÍZIMOS */}
+
       <MenuItem
         icon={
           <FaDollarSign size={18} />
@@ -147,17 +175,17 @@ const Sidebar = () => {
       />
 
       {/* EVENTOS */}
+
       <MenuItem
         icon={
-          <MdCalendarToday
-            size={18}
-          />
+          <MdCalendarToday size={18} />
         }
         label="Eventos"
         path="/eventos"
       />
 
       {/* BATISMO */}
+
       <MenuItem
         icon={
           <GiWaterDrop size={18} />
@@ -167,17 +195,17 @@ const Sidebar = () => {
       />
 
       {/* CARTAS E CARTÕES */}
+
       <MenuItem
         icon={
-          <FaAddressCard
-            size={18}
-          />
+          <FaAddressCard size={18} />
         }
         label="Cartas e cartões"
         path="/cartas-cartoes"
       />
 
       {/* CONFIGURAÇÕES */}
+
       <MenuItem
         icon={
           <FaCog size={18} />
@@ -190,35 +218,41 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* ========================= */}
-      {/* BOTÃO MOBILE */}
-      {/* ========================= */}
+      {/* ================================================= */}
+      {/* BOTÃO DO MENU MOBILE */}
+      {/* ================================================= */}
 
       <IconButton
         aria-label="Abrir menu"
-        icon={<HamburgerIcon />}
-        variant="outline"
+        icon={<HamburgerIcon boxSize={6} />}
+        colorScheme="blue"
+        size="md"
         display={{
-          base: "block",
+          base: "flex",
           md: "none",
         }}
         position="fixed"
-        top={4}
-        left={4}
-        zIndex={10}
-        onClick={toggleSidebar}
+        top={3}
+        left={3}
+        zIndex={1000}
+        borderRadius="md"
+        boxShadow="lg"
+        onClick={() =>
+          setIsOpen(true)
+        }
       />
 
-      {/* ========================= */}
+      {/* ================================================= */}
       {/* SIDEBAR DESKTOP */}
-      {/* ========================= */}
+      {/* ================================================= */}
 
       <Box
-        w="200px"
+        w="220px"
+        flexShrink={0}
         bg="blue.500"
         color="white"
         minH="100vh"
-        p={5}
+        p={4}
         position="fixed"
         left={0}
         top={0}
@@ -228,22 +262,34 @@ const Sidebar = () => {
         }}
         flexDirection="column"
         boxShadow="lg"
-        zIndex={5}
+        zIndex={900}
       >
         <VStack
-          spacing={8}
+          spacing={6}
           align="stretch"
-          flex="1"
+          h="100%"
         >
           {/* TÍTULO */}
 
-          <Text
-            fontSize="xl"
-            fontWeight="bold"
-            textAlign="center"
+          <Flex
+            justify="center"
+            align="center"
+            minH="50px"
           >
-            Dashboard
-          </Text>
+            <Text
+              fontSize="xl"
+              fontWeight="bold"
+              textAlign="center"
+            >
+              Dashboard
+            </Text>
+          </Flex>
+
+          {/* LINHA */}
+
+          <Divider
+            borderColor="blue.300"
+          />
 
           {/* MENU */}
 
@@ -251,48 +297,80 @@ const Sidebar = () => {
 
           {/* RODAPÉ */}
 
-          <Box mt="auto">
-            {renderFooter()}
-          </Box>
+          {renderFooter()}
         </VStack>
       </Box>
 
-      {/* ========================= */}
-      {/* SIDEBAR MOBILE */}
-      {/* ========================= */}
+      {/* ================================================= */}
+      {/* MENU MOBILE */}
+      {/* ================================================= */}
 
       <Drawer
         placement="left"
-        onClose={() =>
-          setIsOpen(false)
-        }
+        onClose={fecharSidebar}
         isOpen={isOpen}
+        size="xs"
       >
         <DrawerOverlay />
 
-        <DrawerContent>
+        <DrawerContent
+          bg="blue.500"
+          color="white"
+          maxW="280px"
+        >
+
           <DrawerBody
-            bg="blue.500"
-            color="white"
-            p={5}
+            p={4}
             display="flex"
             flexDirection="column"
             minH="100vh"
           >
-            <VStack
-              spacing={6}
-              align="stretch"
-              flex="1"
-            >
-              {/* TÍTULO */}
 
-              <Text
-                fontSize="xl"
-                fontWeight="bold"
-                textAlign="center"
+            <VStack
+              spacing={5}
+              align="stretch"
+              h="100%"
+            >
+
+              {/* CABEÇALHO MOBILE */}
+
+              <Flex
+                justify="space-between"
+                align="center"
+                minH="50px"
               >
-                Dashboard
-              </Text>
+
+                <Text
+                  fontSize="xl"
+                  fontWeight="bold"
+                >
+                  Dashboard
+                </Text>
+
+                <IconButton
+                  aria-label="Fechar menu"
+                  icon={
+                    <Text
+                      fontSize="2xl"
+                      lineHeight="1"
+                    >
+                      ×
+                    </Text>
+                  }
+                  size="sm"
+                  variant="ghost"
+                  color="white"
+                  _hover={{
+                    bg: "blue.600",
+                  }}
+                  onClick={fecharSidebar}
+                />
+
+              </Flex>
+
+              <Divider
+                borderColor="blue.300"
+              />
 
               {/* MENU */}
 
@@ -300,11 +378,12 @@ const Sidebar = () => {
 
               {/* RODAPÉ */}
 
-              <Box mt="auto">
-                {renderFooter()}
-              </Box>
+              {renderFooter()}
+
             </VStack>
+
           </DrawerBody>
+
         </DrawerContent>
       </Drawer>
     </>
