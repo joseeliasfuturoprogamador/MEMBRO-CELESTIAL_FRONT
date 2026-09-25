@@ -152,7 +152,8 @@ const CadastroLogin = () => {
       //
       // Isso evita o problema do App.jsx ainda
       // estar com idIgreja vazio no momento do navigate.
-      window.location.replace("/dashboard");
+      window.dispatchEvent(new Event("igrejaLogada"));
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error(
         "Erro no login/cadastro:",
