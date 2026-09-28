@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
   Box,
   Button,
@@ -10,10 +11,10 @@ import {
   useToast,
   Link,
 } from "@chakra-ui/react";
+
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// URL do backend
 const API_URL = import.meta.env.VITE_API_URL;
 
 const CadastroLogin = () => {
@@ -43,25 +44,54 @@ const CadastroLogin = () => {
       return;
     }
 
-    try {
-      if (!API_URL) {
-        throw new Error("API_URL não definida!");
-      }
+    if (!API_URL) {
+      toast({
+        title: "Erro de configuração",
+        description: "URL da API não configurada.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
 
+      return;
+    }
+
+    try {
       setCarregando(true);
 
-      // =========================
-      // CADASTRO
-      // =========================
+      // =====================================================
+      // CADASTRO DA IGREJA
+      // =====================================================
+
       if (modoCadastro) {
         const response = await axios.post(
           `${API_URL}/api/cadastrar`,
-          formData
+          {
+            nome: formData.nome.trim(),
+            email: formData.email.trim(),
+            senha: formData.senha,
+          }
         );
+
+        console.log(
+          "Resposta do cadastro:",
+          response.data
+        );
+
+        // Verifica se o backend realmente devolveu o ID
+        if (!response.data?.idIgreja) {
+          throw new Error(
+            "A igreja foi cadastrada, mas o servidor não retornou o ID da igreja."
+          );
+        }
+
+        // =====================================================
+        // SALVA OS DADOS NECESSÁRIOS PARA A CONFIRMAÇÃO
+        // =====================================================
 
         sessionStorage.setItem(
           "igrejaEmail",
-          formData.email
+          formData.email.trim()
         );
 
         sessionStorage.setItem(
@@ -69,27 +99,45 @@ const CadastroLogin = () => {
           String(response.data.idIgreja)
         );
 
+        console.log(
+          "Email temporário:",
+          sessionStorage.getItem("igrejaEmail")
+        );
+
+        console.log(
+          "ID temporário:",
+          sessionStorage.getItem("idIgrejaTemp")
+        );
+
         toast({
           title: "Cadastro realizado!",
           description:
-            "Verifique seu email e insira o código para confirmar.",
+            "Verifique seu email e insira o código de confirmação.",
           status: "success",
-          duration: 5000,
+          duration: 2000,
           isClosable: true,
         });
 
-        navigate("/confirmar-codigo");
+        // IMPORTANTE:
+        // tira o loading ANTES de mudar de tela
+        setCarregando(false);
+
+        // Vai para a tela de confirmação
+        navigate("/confirmar-codigo", {
+          replace: true,
+        });
 
         return;
       }
 
-      // =========================
+      // =====================================================
       // LOGIN
-      // =========================
+      // =====================================================
+
       const response = await axios.post(
         `${API_URL}/api/login`,
         {
-          nome: formData.email,
+          nome: formData.email.trim(),
           senha: formData.senha,
         }
       );
@@ -111,15 +159,17 @@ const CadastroLogin = () => {
         return;
       }
 
-      // =========================
+      // =====================================================
       // SALVA ID DEFINITIVO
-      // =========================
+      // =====================================================
+
       sessionStorage.setItem(
         "idIgreja",
         String(idIgreja)
       );
 
       sessionStorage.removeItem("idIgrejaTemp");
+      sessionStorage.removeItem("igrejaEmail");
 
       console.log(
         "Login realizado. ID da igreja:",
@@ -134,25 +184,20 @@ const CadastroLogin = () => {
         isClosable: true,
       });
 
-      // =========================
-      // AVISA O APP QUE O LOGIN
-      // FOI REALIZADO
-      // =========================
+      // Avisa o App
       window.dispatchEvent(
         new Event("igrejaLogada")
       );
 
-      // =========================
-      // VAI PARA O DASHBOARD
-      // =========================
+      setCarregando(false);
+
       navigate("/dashboard", {
         replace: true,
       });
     } catch (error) {
       console.error(
         "Erro no login/cadastro:",
-        error.response?.data ||
-          error.message
+        error.response?.data || error.message
       );
 
       setCarregando(false);
@@ -200,9 +245,7 @@ const CadastroLogin = () => {
           md: "row",
         }}
       >
-        {/* =========================
-            LADO DA LOGO
-        ========================= */}
+        {/* LOGO */}
         <Box
           w={{
             base: "100%",
@@ -245,9 +288,7 @@ const CadastroLogin = () => {
           />
         </Box>
 
-        {/* =========================
-            FORMULÁRIO
-        ========================= */}
+        {/* FORMULÁRIO */}
         <Box
           w={{
             base: "100%",
@@ -288,9 +329,6 @@ const CadastroLogin = () => {
             onSubmit={handleSubmit}
             w="100%"
           >
-            {/* =========================
-                CAMPOS DO CADASTRO
-            ========================= */}
             {modoCadastro && (
               <>
                 <Input
@@ -302,6 +340,7 @@ const CadastroLogin = () => {
                   onChange={handleChange}
                   required
                   autoComplete="email"
+                  type="email"
                 />
 
                 <Input
@@ -317,9 +356,6 @@ const CadastroLogin = () => {
               </>
             )}
 
-            {/* =========================
-                EMAIL NO LOGIN
-            ========================= */}
             {!modoCadastro && (
               <Input
                 w="100%"
@@ -334,9 +370,6 @@ const CadastroLogin = () => {
               />
             )}
 
-            {/* =========================
-                SENHA
-            ========================= */}
             <Input
               w="100%"
               size="lg"
@@ -349,16 +382,17 @@ const CadastroLogin = () => {
               autoComplete="current-password"
             />
 
-            {/* =========================
-                BOTÃO
-            ========================= */}
             <Button
               w="100%"
               minH="48px"
               colorScheme="blue"
               type="submit"
               isLoading={carregando}
-              loadingText="Entrando..."
+              loadingText={
+                modoCadastro
+                  ? "Criando igreja..."
+                  : "Entrando..."
+              }
               fontSize="md"
             >
               {modoCadastro
@@ -367,9 +401,6 @@ const CadastroLogin = () => {
             </Button>
           </VStack>
 
-          {/* =========================
-              RECUPERAR SENHA
-          ========================= */}
           {!modoCadastro && (
             <Text
               mt={3}
@@ -382,9 +413,7 @@ const CadastroLogin = () => {
             >
               <Link
                 onClick={() =>
-                  navigate(
-                    "/recuperar-senha"
-                  )
+                  navigate("/recuperar-senha")
                 }
                 cursor="pointer"
               >
@@ -393,9 +422,6 @@ const CadastroLogin = () => {
             </Text>
           )}
 
-          {/* =========================
-              ALTERAR LOGIN/CADASTRO
-          ========================= */}
           <Text
             mt={{
               base: 5,
@@ -411,9 +437,7 @@ const CadastroLogin = () => {
             }}
             px={2}
             onClick={() =>
-              setModoCadastro(
-                !modoCadastro
-              )
+              setModoCadastro(!modoCadastro)
             }
           >
             {modoCadastro
